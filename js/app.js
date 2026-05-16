@@ -1185,6 +1185,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         >
         + Nuevo pedido
         </button>
+        <button
+        id="btn-download-orders-pdf"
+        class="w-full bg-white/80 dark:bg-slate-900 border border-sky-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl py-3 font-semibold flex items-center justify-center gap-2"
+        >
+        <img src="./assets/icons/download-file.svg" class="w-6 h-6" alt="Descargar">
+        Descargar PDF de pedidos
+        </button>
         </header>
 
         <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1253,6 +1260,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.querySelector("#btn-new-order")?.addEventListener("click",
             () => {
                 renderOrderForm(profile, activeBusiness);
+            });
+
+        document.querySelector("#btn-download-orders-pdf")?.addEventListener("click",
+            async () => {
+                await downloadOrdersPDF(profile, activeBusiness);
             });
 
         await loadOrders(activeBusiness?.businesses?.id);
@@ -3910,6 +3922,190 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             showToast("PDF abierto en nueva pestaña.", "success");
         }
+    }
+
+    // Descargar PDF Pedidos
+    async function downloadOrdersPDF(profile, activeBusiness) {
+        if (!window.jspdf) {
+            showToast("jsPDF no está cargado.", "error");
+            return;
+        }
+
+        const {
+            jsPDF
+        } = window.jspdf;
+        const doc = new jsPDF("l", "mm", "letter");
+
+        if (typeof doc.autoTable !== "function") {
+            showToast("autoTable no está cargado.", "error");
+            return;
+        }
+
+        const businessId = activeBusiness?.businesses?.id;
+        const businessName = activeBusiness?.businesses?.name || "AquaControl";
+        const adminName = profile?.full_name || "Administrador";
+
+        if (!businessId) {
+            showToast("No se encontró negocio activo.", "error");
+            return;
+        }
+
+        const {
+            data,
+            error
+        } = await supabaseClient
+        .from("orders")
+        .select(`
+            order_number,
+            status,
+            total_sale,
+            total_cost,
+            total_profit,
+            created_at,
+            clients (
+            name
+            ),
+            profiles (
+            full_name
+            ),
+            order_items (
+            product_name,
+            quantity
+            )
+            `)
+        .eq("business_id", businessId)
+        .order("created_at", {
+            ascending: false
+        });
+
+        if (error) {
+            console.error(error);
+            showToast("No se pudieron cargar pedidos.", "error");
+            return;
+        }
+
+        let logoBase64 = null;
+
+        try {
+            logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
+        } catch (error) {
+            console.warn("No se pudo cargar logo:", error);
+        }
+
+        doc.setFillColor(14, 165, 233);
+        doc.rect(0, 0, 280, 34, "F");
+
+        if (logoBase64) {
+            doc.addImage(logoBase64, "PNG", 14, 7, 18, 18);
+        }
+
+        const titleX = logoBase64 ? 38: 14;
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(17);
+        doc.text("AquaControl", titleX, 14);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Reporte de tabla de pedidos", titleX, 22);
+
+        doc.setTextColor(15, 23, 42);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        doc.text(businessName, 14, 45);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(`Administrador: ${adminName}`, 14, 52);
+        doc.text(`Generado: ${new Date().toLocaleString("es-MX")}`, 14, 58);
+
+        const rows = (data || []).map(order => {
+            const productsText = order.order_items?.length
+            ? order.order_items.map(item => `${item.product_name} x${item.quantity}`).join(", "): "—";
+
+            return [
+                `#${String(order.order_number || 0).padStart(4, "0")}`,
+                formatDate(order.created_at),
+                order.clients?.name || "—",
+                order.profiles?.full_name || "—",
+                productsText,
+                formatCurrency(order.total_sale || 0),
+                formatCurrency(order.total_cost || 0),
+                formatCurrency(order.total_profit || 0),
+                getOrderStatusLabel(order.status)
+            ];
+        });
+
+        doc.autoTable({
+            startY: 68,
+            head: [[
+                "# Pedido",
+                "Fecha",
+                "Cliente",
+                "Vendedor",
+                "Productos",
+                "Venta",
+                "Costo",
+                "Ganancia",
+                "Status"
+            ]],
+            body: rows.length ? rows: [[
+                "—", "—", "Sin pedidos registrados", "—", "—", "—", "—", "—", "—"
+            ]],
+            theme: "grid",
+            headStyles: {
+                fillColor: [14, 165, 233],
+                textColor: 255,
+                fontStyle: "bold",
+                fontSize: 8
+            },
+            styles: {
+                fontSize: 7,
+                cellPadding: 2,
+                overflow: "linebreak"
+            },
+            columnStyles: {
+                0: {
+                    cellWidth: 18
+                },
+                1: {
+                    cellWidth: 28
+                },
+                2: {
+                    cellWidth: 32
+                },
+                3: {
+                    cellWidth: 32
+                },
+                4: {
+                    cellWidth: 58
+                },
+                5: {
+                    cellWidth: 22
+                },
+                6: {
+                    cellWidth: 22
+                },
+                7: {
+                    cellWidth: 24
+                },
+                8: {
+                    cellWidth: 24
+                }
+            }
+        });
+
+        const pageCount = doc.internal.getNumberOfPages();
+
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            doc.text(`AquaControl - Página ${i} de ${pageCount}`, 14, 205);
+        }
+
+        doc.save(`Pedidos-AquaControl-${new Date().toISOString().slice(0, 10)}.pdf`);
     }
 
 
