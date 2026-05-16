@@ -1,0 +1,798 @@
+/* =========================
+   AQUACONTROL
+   ESTILOS GLOBALES
+========================= */
+
+:root {
+    color-scheme: light dark;
+}
+
+/* =========================
+   RESET
+========================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* =========================
+   BODY
+========================= */
+
+body {
+    font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+
+    overflow-x: hidden;
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.4);
+    border-radius: 999px;
+}
+
+/* =========================
+   TRANSICIONES
+========================= */
+
+button,
+input,
+textarea,
+select,
+a {
+    transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease,
+    opacity 0.2s ease;
+}
+
+/* =========================
+   INPUTS
+========================= */
+
+input,
+textarea,
+select {
+    width: 100%;
+    outline: none;
+}
+
+/* =========================
+   BOTÓN TAP MÓVIL
+========================= */
+
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* =========================
+   TARJETAS
+========================= */
+
+.aqua-card {
+    border-radius: 24px;
+    background: white;
+    border: 1px solid rgb(226 232 240);
+    box-shadow:
+    0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+.dark .aqua-card {
+    background: rgb(15 23 42);
+    border-color: rgb(30 41 59);
+}
+
+/* =========================
+   TABLAS RESPONSIVE
+========================= */
+
+.aqua-table-wrapper {
+    overflow-x: auto;
+    border-radius: 20px;
+}
+
+.aqua-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.aqua-table thead {
+    background: rgb(241 245 249);
+}
+
+.dark .aqua-table thead {
+    background: rgb(15 23 42);
+}
+
+.aqua-table th,
+.aqua-table td {
+    padding: 14px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid rgb(226 232 240);
+}
+
+.dark .aqua-table th,
+.dark .aqua-table td {
+    border-color: rgb(30 41 59);
+}
+
+/* =========================
+   STATUS BADGES
+========================= */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: rgba(34, 197, 94, 0.12);
+    color: rgb(22 163 74);
+}
+
+.badge-warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: rgb(217 119 6);
+}
+
+.badge-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: rgb(220 38 38);
+}
+
+/* =========================
+   LOADING
+========================= */
+
+.loading-spinner {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =========================
+   ANIMACIONES
+========================= */
+
+.fade-in {
+    animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================
+   MOBILE OPTIMIZATION
+========================= */
+
+img {
+    max-width: 100%;
+}
+
+html {
+    touch-action: manipulation;
+}
+
+@media (max-width: 640px) {
+
+    .aqua-table {
+        min-width: 700px;
+    }
+
+}
+
+/* =========================
+   FIX TEMA CLARO AQUA / OSCURO
+========================= */
+
+html:not(.dark) body {
+
+    background:
+    linear-gradient(
+    135deg,
+    #1FA2FF 0%,
+    #12D8FA 45%,
+    #A6FFCB 100%
+    ) !important;
+
+    background-attachment: fixed;
+
+    color: #0f172a !important;
+}
+
+html.dark body {
+    background: #020617 !important;
+    color: #f8fafc !important;
+}
+
+html:not(.dark) .aqua-card {
+
+    background:
+    rgba(255,255,255,0.82) !important;
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border:
+    1px solid rgba(255,255,255,0.45) !important;
+
+    box-shadow:
+    0 8px 30px rgba(15,23,42,0.08);
+
+    color: #0f172a !important;
+}
+
+html.dark .aqua-card {
+    background: #0f172a !important;
+    border-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+html:not(.dark) .aqua-card p {
+    color: #64748b !important;
+}
+
+html:not(.dark) .aqua-card h1,
+html:not(.dark) .aqua-card h2 {
+    color: #0f172a !important;
+}
+
+html.dark .aqua-card p {
+    color: #94a3b8 !important;
+}
+
+html.dark .aqua-card h1,
+html.dark .aqua-card h2 {
+    color: #f8fafc !important;
+}
+
+/* =========================
+   RESPONSIVE MOBILE FIRST
+========================= */
+
+#app {
+    width: 100%;
+    min-height: 100vh;
+}
+
+section {
+    width: 100%;
+}
+
+/* Evita que el contenido quede tapado por menú inferior */
+.has-bottom-nav {
+    padding-bottom: 96px !important;
+}
+
+/* Móviles pequeños */
+@media (max-width: 380px) {
+    .aqua-card {
+        border-radius: 20px;
+    }
+
+    .aqua-card.p-5 {
+        padding: 1rem !important;
+    }
+
+    h1 {
+        font-size: 1.8rem !important;
+        line-height: 2.1rem !important;
+    }
+
+    h2 {
+        font-size: 1.35rem !important;
+    }
+
+    button {
+        font-size: 0.9rem;
+    }
+}
+
+/* Móviles medianos */
+@media (min-width: 381px) and (max-width: 480px) {
+    .aqua-card {
+        border-radius: 24px;
+    }
+}
+
+/* Móviles grandes */
+@media (min-width: 481px) and (max-width: 768px) {
+    .aqua-card {
+        border-radius: 28px;
+    }
+
+    .mobile-grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Evitar zoom raro en inputs en Android/iPhone */
+input,
+select,
+textarea {
+    font-size: 16px !important;
+}
+
+/* Menú inferior seguro para pantallas con barra */
+nav {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Tablas en móvil */
+.mobile-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Botones cómodos para dedo */
+button,
+.tap-target {
+    min-height: 44px;
+}
+
+/* =========================
+   BOTTOM NAV
+========================= */
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 12px 4px;
+    min-height: 64px;
+
+    font-weight: 600;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.nav-item:active {
+    transform: scale(0.96);
+}
+
+/* =========================
+   FORMULARIOS MODERNOS
+========================= */
+
+.form-control {
+    width: 100%;
+    border-radius: 20px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    padding: 14px 16px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.form-control::placeholder {
+    color: #94a3b8;
+}
+
+html.dark .form-control {
+    background: #020617;
+    border-color: #1e293b;
+    color: #f8fafc;
+}
+
+html.dark .form-control::placeholder {
+    color: #64748b;
+}
+
+.form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #0f172a;
+}
+
+html.dark .form-label {
+    color: #f8fafc;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+@media (min-width: 420px) {
+    .form-grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* =========================
+   PRODUCTOS
+========================= */
+
+.product-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.product-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: linear-gradient(180deg, #0ea5e9, #22c55e);
+}
+
+.product-price-box {
+    border-radius: 20px;
+    padding: 14px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+}
+
+html.dark .product-price-box {
+    background: #020617;
+    border-color: #1e293b;
+}
+
+@media (max-width: 380px) {
+    .product-card h2 {
+        font-size: 1.35rem !important;
+    }
+
+    .product-price-box {
+        padding: 12px;
+    }
+}
+
+/* =========================
+   NUEVO PEDIDO
+========================= */
+
+.order-seller-box {
+    border-radius: 22px;
+    padding: 18px;
+    background: linear-gradient(135deg, #0284c7, #0f172a);
+    color: white;
+}
+
+
+
+.order-total-box {
+    border-radius: 20px;
+    padding: 14px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+}
+
+html.dark .order-total-box {
+    background: #020617;
+    border-color: #1e293b;
+}
+
+.order-total-box p:first-child {
+    font-size: 12px;
+    color: #64748b;
+}
+
+html.dark .order-total-box p:first-child {
+    color: #94a3b8;
+}
+
+.order-total-box p:last-child {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+/* =========================
+   AUTH LOGIN / REGISTER
+========================= */
+
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    background:
+    radial-gradient(circle at top, rgba(14, 165, 233, 0.18), transparent 35%),
+    #f1f5f9;
+}
+
+html.dark .auth-page {
+    background:
+    radial-gradient(circle at top, rgba(14, 165, 233, 0.14), transparent 35%),
+    #020617;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 430px;
+    border-radius: 32px;
+    padding: 28px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+}
+
+html.dark .auth-card {
+    background: #0f172a;
+    border-color: #1e293b;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.auth-title {
+    font-size: 30px;
+    line-height: 1.1;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+html.dark .auth-title {
+    color: #f8fafc;
+}
+
+.auth-subtitle {
+    margin-top: 8px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #64748b;
+}
+
+html.dark .auth-subtitle {
+    color: #94a3b8;
+}
+
+.auth-input-wrapper {
+    position: relative;
+}
+
+.auth-password-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    min-height: auto;
+    padding: 6px;
+    font-size: 18px;
+    color: #64748b;
+}
+
+html.dark .auth-password-toggle {
+    color: #cbd5e1;
+}
+
+.auth-link {
+    color: #0284c7;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+html.dark .auth-link {
+    color: #38bdf8;
+}
+
+/* =========================
+   BOTTOM NAV - TEMA CLARO
+========================= */
+
+html:not(.dark) nav {
+
+    background:
+    rgba(255,255,255,0.78) !important;
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    border-top:
+    1px solid rgba(255,255,255,0.4) !important;
+}
+
+/* Íconos inactivos */
+html:not(.dark) .nav-item {
+    color: #64748b !important;
+}
+
+/* Ícono activo */
+html:not(.dark) .nav-item.active,
+html:not(.dark) .nav-item.text-sky-600 {
+    color: #0284c7 !important;
+}
+
+/* =========================
+   BOTTOM NAV - TEMA OSCURO
+========================= */
+
+html.dark nav {
+    background: rgba(2, 6, 23, 0.92) !important;
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border-top: 1px solid #1e293b !important;
+}
+
+/* ========================
+    Iconos Premium
+======================*/
+
+.nav-icon {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.nav-item {
+    gap: 3px;
+}
+
+.nav-item img {
+    opacity: 0.72;
+    filter: saturate(0.85);
+}
+
+.nav-item.text-sky-600 img,
+.nav-item.dark\:text-sky-400 img {
+    opacity: 1;
+    filter: saturate(1.15);
+    transform: scale(1.08);
+}
+
+/* =========================
+   DASHBOARD HEADER PREMIUM
+========================= */
+
+.icon-action-button {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255, 255, 255, 0.70);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.icon-action-button:active {
+    transform: scale(0.95);
+}
+
+.icon-action-button img {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+}
+
+.icon-action-button.danger {
+    background: #fee2e2;
+    border-color: #fecaca;
+}
+
+html.dark .icon-action-button {
+    background: rgba(15, 23, 42, 0.85);
+    border-color: rgba(51, 65, 85, 0.9);
+}
+
+html.dark .icon-action-button.danger {
+    background: rgba(127, 29, 29, 0.45);
+    border-color: rgba(248, 113, 113, 0.35);
+}
+
+.dashboard-user-info {
+    padding-top: 6px;
+    border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.dashboard-info-line {
+    margin-top: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+html.dark .dashboard-info-line {
+    color: #f8fafc;
+}
+
+.dashboard-role-badge {
+    display: inline-flex;
+    margin-top: 10px;
+
+    padding: 7px 12px;
+    border-radius: 999px;
+
+    background: rgba(14, 165, 233, 0.12);
+    color: #0369a1;
+
+    font-size: 12px;
+    font-weight: 800;
+}
+
+html.dark .dashboard-role-badge {
+    background: rgba(56, 189, 248, 0.12);
+    color: #7dd3fc;
+}
+
+/* =========================
+   REPORTES - GRÁFICA SIMPLE
+========================= */
+
+.chart-track {
+    width: 100%;
+    height: 16px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(148, 163, 184, 0.22);
+}
+
+.chart-bar {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.45s ease;
+}
+
+.chart-sales {
+    background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+}
+
+.chart-expenses {
+    background: linear-gradient(90deg, #f97316, #facc15);
+}
+
+.chart-profit {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
