@@ -2339,6 +2339,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         >
         + Nuevo gasto
         </button>
+        <button
+        id="btn-download-expenses-pdf"
+        class="w-full bg-white/80 dark:bg-slate-900 border border-sky-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl py-3 font-semibold flex items-center justify-center gap-2"
+        >
+        <img src="./assets/icons/download-file.svg" class="w-6 h-6" alt="Descargar">
+        Descargar PDF de gastos
+        </button>
         </header>
 
         <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -2399,6 +2406,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         document.querySelector("#btn-new-expense")?.addEventListener("click", () => {
             renderExpenseForm(profile, activeBusiness);
+        });
+
+        document.querySelector("#btn-download-expenses-pdf")?.addEventListener("click", async () => {
+            await downloadExpensesPDF(profile, activeBusiness);
         });
 
         await loadExpenses(activeBusiness?.businesses?.id);
@@ -4106,6 +4117,254 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         doc.save(`Pedidos-AquaControl-${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
+
+    // Descargar PDF Gastos
+    async function downloadExpensesPDF(profile, activeBusiness) {
+        if (!window.jspdf) {
+            showToast("jsPDF no está cargado.", "error");
+            return;
+        }
+
+        const {
+            jsPDF
+        } = window.jspdf;
+        const doc = new jsPDF("p", "mm", "letter");
+
+        if (typeof doc.autoTable !== "function") {
+            showToast("autoTable no está cargado.", "error");
+            return;
+        }
+
+        const businessId = activeBusiness?.businesses?.id;
+        const businessName = activeBusiness?.businesses?.name || "AquaControl";
+        const adminName = profile?.full_name || "Administrador";
+
+        if (!businessId) {
+            showToast("No se encontró negocio activo.", "error");
+            return;
+        }
+
+        const {
+            data,
+            error
+        } = await supabaseClient
+        .from("expenses")
+        .select(`
+            expense_number,
+            category,
+            total_amount,
+            notes,
+            created_at,
+            profiles (
+            full_name
+            ),
+            expense_items (
+            concept,
+            quantity,
+            unit_cost
+            )
+            `)
+        .eq("business_id", businessId)
+        .order("created_at", {
+            ascending: true
+        });
+
+        if (error) {
+            console.error(error);
+            showToast("No se pudieron cargar gastos.", "error");
+            return;
+        }
+
+        let logoBase64 = null;
+
+        try {
+            logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
+        } catch (error) {
+            console.warn("No se pudo cargar logo:", error);
+        }
+
+        doc.setFillColor(14, 165, 233);
+        doc.rect(0, 0, 216, 34, "F");
+
+        if (logoBase64) {
+            doc.addImage(logoBase64, "PNG", 14, 7, 18, 18);
+        }
+
+        const titleX = logoBase64 ? 38: 14;
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(17);
+        doc.text("AquaControl", titleX, 14);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Reporte de gastos por mes", titleX, 22);
+
+        doc.setTextColor(15, 23, 42);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        doc.text(businessName, 14, 45);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(`Administrador: ${adminName}`, 14, 52);
+        doc.text(`Generado: ${new Date().toLocaleString("es-MX")}`, 14, 58);
+
+        const expenses = data || [];
+
+        if (expenses.length === 0) {
+            doc.autoTable({
+                startY: 70,
+                head: [["Mensaje"]],
+                body: [["Sin gastos registrados."]],
+                theme: "grid",
+                headStyles: {
+                    fillColor: [14, 165, 233],
+                    textColor: 255
+                }
+            });
+
+            doc.save(`Gastos-AquaControl-${new Date().toISOString().slice(0, 10)}.pdf`);
+            return;
+        }
+
+        const groupedByMonth = {};
+
+        expenses.forEach(expense => {
+            const monthKey = expense.created_at?.slice(0, 7) || "Sin fecha";
+
+            if (!groupedByMonth[monthKey]) {
+                groupedByMonth[monthKey] = [];
+            }
+
+            groupedByMonth[monthKey].push(expense);
+        });
+
+        let startY = 72;
+
+        Object.entries(groupedByMonth).forEach(([monthKey, monthExpenses], index) => {
+            if (index > 0) {
+                doc.addPage();
+                startY = 20;
+            }
+
+            const monthTotal = monthExpenses.reduce((sum, expense) => {
+                const directTotal = Number(expense.total_amount || 0);
+
+                if (directTotal > 0) return sum + directTotal;
+
+                const itemsTotal = expense.expense_items?.reduce((itemSum, item) => {
+                    return itemSum + ((Number(item.quantity) || 0) * (Number(item.unit_cost) || 0));
+                }, 0) || 0;
+
+                return sum + itemsTotal;
+            },
+                0);
+
+            doc.setFont("helvetica",
+                "bold");
+            doc.setFontSize(13);
+            doc.setTextColor(15,
+                23,
+                42);
+            doc.text(`Mes: ${monthKey}`,
+                14,
+                startY);
+
+            doc.setFont("helvetica",
+                "normal");
+            doc.setFontSize(10);
+            doc.text(`Total del mes: ${formatCurrency(monthTotal)}`,
+                14,
+                startY + 7);
+
+            const rows = monthExpenses.map(expense => {
+                const conceptsText = expense.expense_items?.length
+                ? expense.expense_items
+                .map(item => `${item.concept} x${item.quantity} (${formatCurrency(item.unit_cost)})`)
+                .join(", "): "—";
+
+                const directTotal = Number(expense.total_amount || 0);
+                const calculatedTotal = directTotal > 0
+                ? directTotal: expense.expense_items?.reduce((itemSum, item) => {
+                    return itemSum + ((Number(item.quantity) || 0) * (Number(item.unit_cost) || 0));
+                }, 0) || 0;
+
+                return [
+                    `#${String(expense.expense_number || 0).padStart(4, "0")}`,
+                    formatDate(expense.created_at),
+                    expense.profiles?.full_name || "—",
+                    expense.category || "—",
+                    conceptsText,
+                    formatCurrency(calculatedTotal),
+                    expense.notes || "—"
+                ];
+            });
+
+            doc.autoTable({
+                startY: startY + 13,
+                head: [[
+                    "# Gasto",
+                    "Fecha",
+                    "Admin",
+                    "Categoría",
+                    "Conceptos",
+                    "Total",
+                    "Notas"
+                ]],
+                body: rows,
+                theme: "grid",
+                headStyles: {
+                    fillColor: [14,
+                        165,
+                        233],
+                    textColor: 255,
+                    fontStyle: "bold",
+                    fontSize: 8
+                },
+                styles: {
+                    fontSize: 7,
+                    cellPadding: 2,
+                    overflow: "linebreak"
+                },
+                columnStyles: {
+                    0: {
+                        cellWidth: 18
+                    },
+                    1: {
+                        cellWidth: 26
+                    },
+                    2: {
+                        cellWidth: 28
+                    },
+                    3: {
+                        cellWidth: 24
+                    },
+                    4: {
+                        cellWidth: 58
+                    },
+                    5: {
+                        cellWidth: 22
+                    },
+                    6: {
+                        cellWidth: 36
+                    }
+                }
+            });
+        });
+
+        const pageCount = doc.internal.getNumberOfPages();
+
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            doc.text(`AquaControl - Página ${i} de ${pageCount}`, 14, 270);
+        }
+
+        doc.save(`Gastos-AquaControl-${new Date().toISOString().slice(0, 10)}.pdf`);
     }
 
 
