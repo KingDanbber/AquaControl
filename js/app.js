@@ -4269,7 +4269,26 @@ document.addEventListener("DOMContentLoaded", async () => {
             doc.setTextColor(15,
                 23,
                 42);
-            doc.text(`Mes: ${monthKey}`,
+            const [year, month] = monthKey.split("-");
+
+            const monthNames = [
+                "Enero",
+                "Febrero",
+                "Marzo",
+                "Abril",
+                "Mayo",
+                "Junio",
+                "Julio",
+                "Agosto",
+                "Septiembre",
+                "Octubre",
+                "Noviembre",
+                "Diciembre"
+            ];
+
+            const formattedMonth = `${monthNames[Number(month) - 1]}, ${year}`;
+
+            doc.text(`Mes: ${formattedMonth}`,
                 14,
                 startY);
 
