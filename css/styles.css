@@ -732,6 +732,10 @@ html.dark .icon-action-button.danger {
     border-color: rgba(248, 113, 113, 0.35);
 }
 
+.dashboard-header{
+    overflow:hidden;
+}
+
 .dashboard-user-info {
     padding-top: 6px;
     border-top: 1px solid rgba(148, 163, 184, 0.25);
@@ -795,4 +799,272 @@ html.dark .dashboard-role-badge {
 
 .chart-profit {
     background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+/* =========================
+   DASHBOARD HEADER ACTIONS FIX
+========================= */
+
+.dashboard-header {
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+}
+
+.dashboard-header-title {
+    min-width: 0;
+    padding-right: 4px;
+}
+
+.dashboard-header-title h1 {
+    max-width: 100%;
+    word-break: normal;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.header-icon-btn {
+    width: 46px;
+    height: 46px;
+    min-height: 46px;
+
+    border: 0;
+    border-radius: 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.header-icon-btn img {
+    width: 25px;
+    height: 25px;
+    object-fit: contain;
+}
+
+.header-icon-btn.logout-btn {
+    background: rgba(254, 226, 226, 0.85);
+    border-color: rgba(252, 165, 165, 0.45);
+}
+
+html.dark .header-icon-btn {
+    background: rgba(15, 23, 42, 0.82);
+    border-color: rgba(51, 65, 85, 0.75);
+}
+
+html.dark .header-icon-btn.logout-btn {
+    background: rgba(127, 29, 29, 0.42);
+    border-color: rgba(248, 113, 113, 0.32);
+}
+
+.header-icon-btn:active {
+    transform: scale(0.94);
+}
+
+/* Celulares angostos */
+@media (max-width: 390px) {
+    .dashboard-header-top {
+        gap: 8px;
+    }
+
+    .header-actions {
+        gap: 6px;
+    }
+
+    .header-icon-btn {
+        width: 42px;
+        height: 42px;
+        min-height: 42px;
+        border-radius: 14px;
+    }
+
+    .header-icon-btn img {
+        width: 23px;
+        height: 23px;
+    }
+}
+
+/* =========================
+   PRODUCTOS - CATÁLOGO RESPONSIVE PREMIUM
+========================= */
+
+.products-catalog-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+}
+
+/* Celulares medianos: 2 columnas */
+@media (min-width: 430px) {
+    .products-catalog-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Celulares grandes / tablets */
+@media (min-width: 720px) {
+    .products-catalog-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.products-catalog-grid .product-card {
+    padding: 14px !important;
+    border-radius: 28px;
+}
+
+/* Imagen más limpia */
+.product-card .product-image-wrapper {
+    border-radius: 26px !important;
+}
+
+/* Evitar textos gigantes en grid */
+.products-catalog-grid .product-card h2 {
+    font-size: clamp(1rem, 4.5vw, 1.35rem) !important;
+    line-height: 1.15 !important;
+}
+
+/* Precio y stock más flexible */
+.products-catalog-grid .product-card p {
+    overflow-wrap: anywhere;
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 390px) {
+    .products-catalog-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .products-catalog-grid .product-card {
+        max-width: 340px;
+        margin-inline: auto;
+    }
+}
+
+/* Móviles normales pero angostos */
+@media (min-width: 391px) and (max-width: 429px) {
+    .products-catalog-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .products-catalog-grid .product-card {
+        max-width: 360px;
+        margin-inline: auto;
+    }
+}
+
+/* Cuando ya hay espacio suficiente para 2 columnas */
+@media (min-width: 430px) and (max-width: 520px) {
+    .products-catalog-grid {
+        gap: 14px;
+    }
+
+    .products-catalog-grid .product-card {
+        padding: 12px !important;
+        border-radius: 24px;
+    }
+
+    .products-catalog-grid .product-card h2 {
+        font-size: 1.05rem !important;
+    }
+}
+
+/* =========================
+   INVENTORY BADGE PREMIUM
+========================= */
+
+.inventory-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    padding: 7px 12px;
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+
+    border: 2px solid transparent;
+    white-space: nowrap;
+
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.10);
+}
+
+.inventory-badge-dot {
+    font-size: 9px;
+    line-height: 1;
+}
+
+.inventory-badge-high {
+    background: #dcfce7;
+    color: #14532d;
+    border-color: #16a34a;
+}
+
+.inventory-badge-medium {
+    background: #fef3c7;
+    color: #78350f;
+    border-color: #f59e0b;
+}
+
+.inventory-badge-low {
+    background: #fee2e2;
+    color: #7f1d1d;
+    border-color: #ef4444;
+}
+
+.inventory-badge-empty {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #64748b;
+}
+
+html.dark .inventory-badge-high {
+    background: rgba(22, 163, 74, 0.22);
+    color: #bbf7d0;
+    border-color: #22c55e;
+}
+
+html.dark .inventory-badge-medium {
+    background: rgba(245, 158, 11, 0.22);
+    color: #fde68a;
+    border-color: #f59e0b;
+}
+
+html.dark .inventory-badge-low {
+    background: rgba(239, 68, 68, 0.22);
+    color: #fecaca;
+    border-color: #ef4444;
+}
+
+html.dark .inventory-badge-empty {
+    background: rgba(100, 116, 139, 0.25);
+    color: #f8fafc;
+    border-color: #94a3b8;
+}
+
+/* Ajuste para tarjetas pequeñas */
+.products-catalog-grid .inventory-badge {
+    font-size: 10px;
+    padding: 7px 10px;
 }
