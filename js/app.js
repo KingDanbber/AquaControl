@@ -418,10 +418,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         <section class="has-bottom-nav min-h-screen bg-transparent px-4 py-6">
         <div class="max-w-5xl mx-auto space-y-4">
 
-        <header class="aqua-card p-5 space-y-4">
+        <header class="aqua-card dashboard-header p-5 space-y-4">
 
-        <div class="flex items-start justify-between gap-4">
-        <div>
+        <div class="dashboard-header-top">
+        <div class="dashboard-header-title">
         <p class="text-sm text-slate-500 dark:text-slate-400">
         AquaControl
         </p>
@@ -431,10 +431,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         </h1>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="header-actions">
         <button
         id="theme-toggle-dashboard"
-        class="icon-action-button"
+        class="header-icon-btn"
         title="Cambiar tema"
         >
         <img src="./assets/icons/theme.svg" alt="Tema">
@@ -442,7 +442,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         <button
         id="btn-logout"
-        class="icon-action-button danger"
+        class="header-icon-btn logout-btn"
         title="Cerrar sesión"
         >
         <img src="./assets/icons/logout.svg" alt="Salir">
@@ -700,10 +700,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         >
         + Agregar producto
         </button>
+        <button
+        id="btn-products-pdf"
+        class="w-full bg-slate-800 hover:bg-slate-700 text-white rounded-2xl py-3 font-semibold"
+        >
+        Descargar PDF de productos
+        </button>
         </header>
 
-        <section id="products-list" class="space-y-3">
-        <div class="aqua-card p-5">
+        <section id="products-list" class="products-catalog-grid">
+        <div class="aqua-card p-5 col-span-2 md:col-span-3">
         <p class="text-sm text-slate-500 dark:text-slate-400">Cargando productos...</p>
         </div>
         </section>
@@ -714,8 +720,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         `;
 
         bindBottomNav(profile, activeBusiness);
+
         document.querySelector("#btn-new-product")?.addEventListener("click", () => {
             renderProductForm(profile, activeBusiness);
+        });
+        document.querySelector("#btn-products-pdf")?.addEventListener("click", async () => {
+            await downloadProductsPDF(activeBusiness?.businesses?.id);
         });
 
         await loadProducts(profile, activeBusiness, activeBusiness?.businesses?.id);
@@ -763,7 +773,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!data || data.length === 0) {
             container.innerHTML = `
-            <div class="aqua-card p-5 text-center">
+            <div class="aqua-card p-5 text-center col-span-2 md:col-span-3">
             <h2 class="text-lg font-bold">Sin productos</h2>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Agrega tu primer producto con precio de compra, precio de venta y stock.
@@ -775,109 +785,92 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         container.innerHTML = data.map(product => {
             const isLowStock = Number(product.stock) <= Number(product.min_stock);
+            const inventoryBadge = getInventoryBadge(product);
+            const categoryIcon = getProductCategoryIcon(product.category);
+            const categoryLabel = getProductCategoryLabel(product.category);
 
             return `
-            <article class="aqua-card product-card p-5">
-
-            <div class="flex items-start justify-between gap-4">
-
-            <div class="min-w-0">
-            <p class="text-xs font-bold uppercase tracking-wide text-sky-600 dark:text-sky-400">
-            ${product.category || "Sin categoría"} · ${product.presentation || "—"}
-            </p>
-
-            <h2 class="text-2xl font-bold mt-2 leading-tight">
-            ${product.brand ? `<span class="text-slate-500 dark:text-slate-400">${product.brand}</span> · `: ""}
-            ${product.name}
-            </h2>
-            </div>
-
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 mt-5">
-            <div class="product-price-box">
-            <p class="text-xs text-slate-500 dark:text-slate-400">Compra</p>
-            <p class="text-lg font-bold">${formatCurrency(product.cost_price)}</p>
-            </div>
-
-            <div class="product-price-box">
-            <p class="text-xs text-slate-500 dark:text-slate-400">Venta</p>
-            <p class="text-lg font-bold">${formatCurrency(product.sale_price)}</p>
-            </div>
-            </div>
-
-            <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-
-            <!-- STOCK INICIAL -->
-            <div class="
-            rounded-2xl
-            bg-sky-100/90
-            border border-sky-200
-            p-3
-            shadow-sm
-            dark:bg-sky-900/30
-            dark:border-sky-800
-            ">
-            <p class="
-            text-xs
-            font-semibold
-            text-sky-700
-            dark:text-sky-300
-            ">
-            Stock inicial
-            </p>
-
-            <p class="
-            mt-1
-            text-2xl
-            font-black
-            text-slate-800
-            dark:text-white
-            ">
-            ${product.initial_stock || 0}
-            </p>
-            </div>
-
-            <!-- STOCK ACTUAL -->
-            <div class="
-            rounded-2xl
-            bg-emerald-100/90
-            border border-emerald-200
-            p-3
-            shadow-sm
-            dark:bg-emerald-900/30
-            dark:border-emerald-800
-            ">
-            <p class="
-            text-xs
-            font-semibold
-            text-emerald-700
-            dark:text-emerald-300
-            ">
-            Stock actual
-            </p>
-
-            <p class="
-            mt-1
-            text-2xl
-            font-black
-            text-slate-800
-            dark:text-white
-            ">
-            ${product.stock || 0}
-            </p>
-            </div>
-
-            </div>
-
-            <div class="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-            <span>Stock mínimo: ${product.min_stock || 0}</span>
-            <span>${isLowStock ? "⚠️ Inventario bajo": "✅ Disponible"}</span>
-            </div>
+            <article class="aqua-card product-card p-3 overflow-hidden border border-white/50 dark:border-slate-800 shadow-xl shadow-sky-900/10">
 
             <button
             type="button"
-            class="btn-restock-product w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl py-3 font-semibold"
+            class="btn-view-product-image product-image-wrapper relative w-full aspect-square rounded-[2rem] overflow-hidden bg-white/80 dark:bg-slate-900 flex items-center justify-center active:scale-95 transition shadow-inner border border-white/70 dark:border-slate-800"
+            data-image-url="${product.image_url || ""}"
+            data-product-name="${product.name || "Producto"}"
+            ${!product.image_url ? "disabled": ""}
+            >
+            ${product.image_url
+            ? `
+            <div class="product-image-skeleton absolute inset-0 animate-pulse bg-slate-300 dark:bg-slate-700 transition-opacity duration-300"></div>
+
+            <img
+            src="${getCloudinaryImage(product.image_url, {
+                width: 500
+            })}"
+            class="w-full h-full object-cover opacity-0 transition-opacity duration-300"
+            alt="${product.name}"
+            loading="lazy"
+            onload="handleProductImageLoad(this)"
+            >
+            `: `<span class="text-5xl">💧</span>`
+            }
+            </button>
+
+            <div class="mt-3 space-y-2">
+            <p class="text-[11px] font-black uppercase tracking-wide text-sky-600 dark:text-sky-400 truncate">
+            <span class="inline-flex items-center gap-1.5">
+            <img src="${categoryIcon}" class="w-4 h-4 object-contain" alt="${categoryLabel}">
+            <span>${categoryLabel}</span>
+            <span>·</span>
+            <span>${product.presentation || "—"}</span>
+            </span>
+            </p>
+
+            <h2 class="text-base font-black leading-tight line-clamp-2 min-h-[42px] text-slate-900 dark:text-white">
+            ${product.brand ? `<span class="text-slate-500 dark:text-slate-400">${product.brand}</span> · `: ""}
+            ${product.name}
+            </h2>
+
+            <div class="grid grid-cols-2 gap-2">
+            <div class="rounded-2xl bg-white/70 white:bg-slate-900/50 p-2 border border-white/50 dark:border-slate-800">
+            <p class="text-[10px] text-slate-500 dark:text-slate-400">Compra</p>
+            <p class="text-sm font-black">${formatCurrency(product.cost_price)}</p>
+            </div>
+
+            <div class="rounded-2xl bg-white/70 white:bg-slate-900/50 p-2 border border-white/50 dark:border-slate-800">
+            <p class="text-[10px] text-slate-500 dark:text-slate-400">Venta</p>
+            <p class="text-sm font-black">${formatCurrency(product.sale_price)}</p>
+            </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+            <div class="rounded-2xl bg-sky-100/90 border border-sky-200 p-2 dark:bg-sky-900/30 dark:border-sky-800">
+            <p class="text-[10px] font-semibold text-sky-700 dark:text-sky-300">Inicial</p>
+            <p class="text-lg font-black">${product.initial_stock || 0}</p>
+            </div>
+
+            <div class="rounded-2xl bg-emerald-100/90 border border-emerald-200 p-2 dark:bg-emerald-900/30 dark:border-emerald-800">
+            <p class="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">Actual</p>
+            <p class="text-lg font-black">${product.stock || 0}</p>
+            </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2">
+            <span class="text-[10px] text-slate-500 dark:text-slate-400">
+            Mín: ${product.min_stock || 0}
+            </span>
+
+            <span class="inventory-badge ${inventoryBadge.className}">
+            <span class="inventory-badge-dot">${inventoryBadge.icon}</span>
+            <span>${inventoryBadge.text}</span>
+            </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-3">
+
+            <button
+            type="button"
+            class="btn-restock-product flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl py-2.5 text-xs font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition"
             data-product-id="${product.id}"
             data-product-name="${product.name}"
             data-product-brand="${product.brand || ""}"
@@ -885,25 +878,157 @@ document.addEventListener("DOMContentLoaded", async () => {
             data-product-stock="${product.stock || 0}"
             data-product-initial-stock="${product.initial_stock || 0}"
             >
-            + Reabastecer
+            <img src="assets/icons/agregar-producto.svg" class="w-5 h-5 brightness-0 invert" alt="">
+            <span>Stock</span>
             </button>
+
+            <button
+            type="button"
+            class="btn-upload-product-image flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl py-2.5 text-xs font-black shadow-lg shadow-slate-900/20 active:scale-95 transition dark:bg-slate-700 dark:hover:bg-slate-600"
+            data-product-id="${product.id}"
+            >
+            <img src="assets/icons/subir-imagen.svg" class="w-5 h-5 brightness-0 invert" alt="">
+            <span>Foto</span>
+            </button>
+
+            </div>
+            </div>
 
             </article>
             `;
         }).join("");
 
-        document.querySelectorAll(".btn-restock-product").forEach(button => {
+        document.querySelectorAll(".btn-view-product-image").forEach(button => {
             button.addEventListener("click", () => {
-                renderRestockProductForm(profile, activeBusiness, {
-                    id: button.dataset.productId,
-                    name: button.dataset.productName,
-                    brand: button.dataset.productBrand,
-                    presentation: button.dataset.productPresentation,
-                    stock: Number(button.dataset.productStock) || 0,
-                    initial_stock: Number(button.dataset.productInitialStock) || 0
-                });
+                const imageUrl = button.dataset.imageUrl;
+                const productName = button.dataset.productName;
+
+                if (!imageUrl) return;
+
+                openProductImageModal(imageUrl, productName);
             });
         });
+
+        document.querySelectorAll(".btn-restock-product").forEach(button => {
+            button.addEventListener("click",
+                () => {
+                    renderRestockProductForm(profile, activeBusiness, {
+                        id: button.dataset.productId,
+                        name: button.dataset.productName,
+                        brand: button.dataset.productBrand,
+                        presentation: button.dataset.productPresentation,
+                        stock: Number(button.dataset.productStock) || 0,
+                        initial_stock: Number(button.dataset.productInitialStock) || 0
+                    });
+                });
+        });
+
+        document.querySelectorAll(".btn-upload-product-image").forEach(button => {
+            button.addEventListener("click",
+                async () => {
+                    const productId = button.dataset.productId;
+
+                    const input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = "image/*";
+
+                    input.addEventListener("change", async () => {
+                        const file = input.files?.[0];
+
+                        if (!file) return;
+
+                        try {
+                            setButtonLoading(button, true, "Subiendo...");
+
+                            const imageUrl = await uploadProductImageToCloudinary(file);
+
+                            const {
+                                error
+                            } = await supabaseClient
+                            .from("products")
+                            .update({
+                                image_url: imageUrl
+                            })
+                            .eq("id", productId);
+
+                            if (error) throw error;
+
+                            showToast("Imagen actualizada correctamente.", "success");
+
+                            await loadProducts(profile, activeBusiness, businessId);
+
+                        } catch (error) {
+                            console.error(error);
+                            showToast(error.message || "No se pudo actualizar la imagen.", "error");
+                        } finally {
+                            setButtonLoading(button, false);
+                        }
+                    });
+
+                    input.click();
+                });
+        });
+    }
+
+    // Función Visual Stock
+    function getInventoryBadge(product) {
+        const stock = Number(product.stock) || 0;
+        const minStock = Number(product.min_stock) || 0;
+
+        if (stock <= 0) {
+            return {
+                text: "Sin stock",
+                icon: "⚫",
+                className: "inventory-badge-empty"
+            };
+        }
+
+        if (stock <= minStock) {
+            return {
+                text: "Stock bajo",
+                icon: "🔴",
+                className: "inventory-badge-low"
+            };
+        }
+
+        if (minStock > 0 && stock <= minStock * 2) {
+            return {
+                text: "Stock medio",
+                icon: "🟡",
+                className: "inventory-badge-medium"
+            };
+        }
+
+        return {
+            text: "Stock alto",
+            icon: "🟢",
+            className: "inventory-badge-high"
+        };
+    }
+
+    // Función Categoría por Iconos
+    function getProductCategoryIcon(category) {
+        const icons = {
+            agua: "assets/icons/botella-de-agua.svg",
+            hielo: "assets/icons/glaciares.svg",
+            relleno: "assets/icons/gota-de-agua.svg",
+            insumo: "assets/icons/caja.svg",
+            otro: "assets/icons/products.svg"
+        };
+
+        return icons[category] || icons.otro;
+    }
+
+    function getProductCategoryLabel(category) {
+        const labels = {
+            agua: "Agua",
+            hielo: "Hielo",
+            relleno: "Relleno",
+            insumo: "Insumo",
+            otro: "Otro"
+        };
+
+        return labels[category] || "Otro";
     }
 
     // Guardar Productos
@@ -1054,6 +1179,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         </div>
 
+        <label class="block">
+        <span class="form-label">Imagen del producto</span>
+
+        <input
+        id="product-image"
+        type="file"
+        accept="image/*"
+        class="form-control"
+        />
+
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+        Opcional. Puedes agregar una imagen ahora o después.
+        </p>
+        </label>
+
         <button
         id="btn-save-product"
         type="submit"
@@ -1080,6 +1220,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
 
             const button = document.querySelector("#btn-save-product");
+            const imageFile = document.querySelector("#product-image")?.files?.[0] || null;
 
             const payload = {
                 business_id: businessId,
@@ -1094,7 +1235,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 min_stock: Number(document.querySelector("#product-min-stock").value) || 0,
                 purchase_at: document.querySelector("#product-purchase-at").value
                 ? new Date(document.querySelector("#product-purchase-at").value).toISOString(): new Date().toISOString(),
-                is_active: true
+                is_active: true,
+                image_url: imageUrl
             };
 
             if (!payload.business_id) {
@@ -1109,6 +1251,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             try {
                 setButtonLoading(button, true, "Guardando...");
+
+                let imageUrl = null;
+
+                if (imageFile) {
+                    setButtonLoading(button, true, "Subiendo imagen...");
+                    imageUrl = await uploadProductImageToCloudinary(imageFile);
+                    setButtonLoading(button, true, "Guardando...");
+                }
 
                 const {
                     data: existingProducts,
@@ -1158,6 +1308,134 @@ document.addEventListener("DOMContentLoaded", async () => {
                 setButtonLoading(button, false);
             }
         });
+    }
+
+    // Agregar Imagen a Productos
+    async function uploadProductImageToCloudinary(file) {
+        const cloudName = "dzh0gjzet";
+        const uploadPreset = "Aquacontrol";
+
+        const formData = new FormData();
+        formData.append("file",
+            file);
+        formData.append("upload_preset",
+            uploadPreset);
+
+        const response = await fetch(
+            `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(data);
+            throw new Error("No se pudo subir la imagen a Cloudinary.");
+        }
+
+        return data.secure_url;
+    }
+
+    function getCloudinaryImage(url, options = {}) {
+        if (!url) return "";
+
+        const {
+            width = 500,
+            quality = "auto",
+            format = "auto",
+            crop = "fill"
+        } = options;
+
+        return url.replace(
+            "/upload/",
+            `/upload/f_${format},q_${quality},c_${crop},w_${width}/`
+        );
+    }
+
+    // Agrandar Imagen Producto
+    function openProductImageModal(imageUrl, productName = "Producto") {
+        if (!imageUrl) return;
+
+        const optimizedImage = getCloudinaryImage(imageUrl, {
+            width: 1000,
+            crop: "fit"
+        });
+
+        const modal = document.createElement("div");
+        modal.id = "product-image-modal";
+        modal.className = "fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4";
+
+        modal.innerHTML = `
+        <div class="relative w-full max-w-md">
+        <button
+        type="button"
+        id="close-product-image-modal"
+        class="absolute -top-12 right-0 w-10 h-10 rounded-full bg-white/20 text-white text-2xl font-bold flex items-center justify-center"
+        >
+        ×
+        </button>
+
+        <div class="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl">
+        <div class="relative bg-white min-h-[260px] flex items-center justify-center">
+        <div class="product-modal-skeleton absolute inset-0 animate-pulse bg-slate-200 transition-opacity duration-300"></div>
+
+        <img
+        src="${optimizedImage}"
+        alt="${productName}"
+        class="product-modal-img w-full max-h-[75vh] object-contain bg-white opacity-0 transition-opacity duration-300"
+        onload="
+        this.classList.remove('opacity-0');
+        const skeleton = this.parentElement.querySelector('.product-modal-skeleton');
+        if (skeleton) {
+        skeleton.classList.add('opacity-0');
+        setTimeout(() => skeleton.remove(), 300);
+        }
+        "
+        />
+        </div>
+
+        <div class="p-4">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+        ${productName}
+        </h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Toca fuera de la imagen para cerrar.
+        </p>
+        </div>
+        </div>
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener("click", (event) => {
+            if (event.target.id === "product-image-modal") {
+                modal.remove();
+            }
+        });
+
+        document.querySelector("#close-product-image-modal")?.addEventListener("click",
+            () => {
+                modal.remove();
+            });
+    }
+
+    // Skeleton mientras carga imagen
+    window.handleProductImageLoad = function(img) {
+        const wrapper = img.closest(".product-image-wrapper");
+        const skeleton = wrapper?.querySelector(".product-image-skeleton");
+
+        if (skeleton) {
+            skeleton.classList.add("opacity-0");
+            setTimeout(() => {
+                skeleton.remove();
+            }, 300);
+        }
+
+        img.classList.remove("opacity-0");
     }
 
     // Función Sección Pedidos
@@ -4288,7 +4566,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const formattedMonth = `${monthNames[Number(month) - 1]}, ${year}`;
 
-            doc.text(`Mes: ${formattedMonth}`,
+            doc.text(`${formattedMonth}`,
                 14,
                 startY);
 
@@ -4384,6 +4662,165 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         doc.save(`Gastos-AquaControl-${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
+
+    // Convertir URL cloudinary a Base64
+    async function imageUrlToBase64(url) {
+        if (!url) return null;
+
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+
+            return await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.error("Error cargando imagen:", error);
+            return null;
+        }
+    }
+
+    // Función PDF Productos
+    async function downloadProductsPDF(businessId) {
+        if (!businessId) {
+            showToast("No se encontró negocio activo.", "error");
+            return;
+        }
+
+        const {
+            data: products,
+            error
+        } = await supabaseClient
+        .from("products")
+        .select("*")
+        .eq("business_id", businessId)
+        .eq("is_active", true)
+        .order("category", {
+            ascending: true
+        })
+        .order("name", {
+            ascending: true
+        });
+
+        if (error) {
+            console.error(error);
+            showToast("No se pudieron cargar los productos.", "error");
+            return;
+        }
+
+        if (!products || products.length === 0) {
+            showToast("No hay productos para generar PDF.", "warning");
+            return;
+        }
+
+        const {
+            jsPDF
+        } = window.jspdf;
+        const doc = new jsPDF("p", "mm", "a4");
+        let logoBase64 = null;
+
+        try {
+            logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
+        } catch (error) {
+            console.warn("No se pudo cargar el logo para el PDF:", error);
+        }
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        let y = 18;
+
+        doc.setFillColor(14, 165, 233);
+        doc.rect(0, 0, pageWidth, 36, "F");
+
+        if (logoBase64) {
+            doc.addImage(
+                logoBase64,
+                "PNG",
+                14,
+                8,
+                18,
+                18
+            );
+        }
+
+        const titleX = logoBase64 ? 38: 14;
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.text("AquaControl", titleX, 15);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Catálogo de productos", titleX, 22);
+
+        doc.setTextColor(15, 23, 42);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Generado: ${new Date().toLocaleString("es-MX")}`, 14, 45);
+
+        y = 55;
+
+        for (const product of products) {
+            if (y > pageHeight - 45) {
+                doc.addPage();
+                y = 18;
+            }
+
+            const imageUrl = product.image_url
+            ? getCloudinaryImage(product.image_url, {
+                width: 300, crop: "fit"
+            }): null;
+
+            const imageBase64 = await imageUrlToBase64(imageUrl);
+
+            doc.setDrawColor(220, 230, 240);
+            doc.roundedRect(14, y, pageWidth - 28, 38, 4, 4);
+
+            if (imageBase64) {
+                doc.addImage(imageBase64, "JPEG", 18, y + 4, 28, 28);
+            } else {
+                doc.setFontSize(18);
+                doc.text("💧", 27, y + 22);
+            }
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text(
+                `${product.brand ? product.brand + " · ": ""}${product.name}`,
+                52,
+                y + 10,
+                {
+                    maxWidth: 130
+                }
+            );
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.text(
+                `${getProductCategoryLabel(product.category)} · ${product.presentation || "—"}`,
+                52,
+                y + 17
+            );
+
+            doc.text(`Compra: ${formatCurrency(product.cost_price)}`, 52, y + 25);
+            doc.text(`Venta: ${formatCurrency(product.sale_price)}`, 100, y + 25);
+
+            doc.setFont("helvetica", "bold");
+            doc.text(`Stock: ${product.stock || 0}`, 150, y + 25);
+
+            doc.setFont("helvetica", "normal");
+            doc.text(`Mín: ${product.min_stock || 0}`, 150, y + 32);
+
+            y += 44;
+        }
+
+        doc.save("catalogo-productos-aquacontrol.pdf");
     }
 
 
