@@ -2,15 +2,12 @@
   "name": "AquaControl",
   "short_name": "AquaControl",
   "description": "Aplicación administrativa para pedidos, ventas, gastos e inventario.",
-
-  "start_url": "./",
-  "scope": "./",
-
+  "start_url": "../index.html",
+  "scope": "../",
   "display": "standalone",
-
+  "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#0ea5e9",
-
   "icons": [
     {
       "src": "../assets/logo-aquacontrol.png",
