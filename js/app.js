@@ -702,9 +702,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         </button>
         <button
         id="btn-products-pdf"
-        class="w-full bg-slate-800 hover:bg-slate-700 text-white rounded-2xl py-3 font-semibold"
+        class="w-full bg-white/80 dark:bg-slate-900 border border-sky-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl py-3 font-semibold flex items-center justify-center gap-2"
         >
-        Descargar PDF de productos
+        <img src="./assets/icons/download-file.svg" class="w-6 h-6" alt="Descargar">
+        PDF Productos
         </button>
         </header>
 
@@ -1468,7 +1469,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         class="w-full bg-white/80 dark:bg-slate-900 border border-sky-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl py-3 font-semibold flex items-center justify-center gap-2"
         >
         <img src="./assets/icons/download-file.svg" class="w-6 h-6" alt="Descargar">
-        Descargar PDF de pedidos
+        PDF Pedidos
         </button>
         </header>
 
@@ -2622,7 +2623,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         class="w-full bg-white/80 dark:bg-slate-900 border border-sky-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl py-3 font-semibold flex items-center justify-center gap-2"
         >
         <img src="./assets/icons/download-file.svg" class="w-6 h-6" alt="Descargar">
-        Descargar PDF de gastos
+        PDF Gastos
         </button>
         </header>
 
