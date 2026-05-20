@@ -132,10 +132,6 @@ AquaControl/
 
 ---
 
-🚀 Instalación Local
-
-git clone TU_REPOSITORIO
-
 Abrir:
 
 index.html
@@ -152,7 +148,7 @@ o publicar en:
 
 Disponible en:
 
-https://github.com/KingDanbber/AquaControl/tree/main
+https://kingdanbber.github.io/AquaControl/
 ---
 
 👨‍💻 Autor
