@@ -407,8 +407,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    const DAILY_SALES_GOAL = 500;
+    const MONTHLY_PROFIT_GOAL = 5000;
+
+
     /* =========================
-   DASHBOARD TEMPORAL
+   DASHBOARD
 ========================= */
 
     function renderDashboardPlaceholder(profile = null, activeBusiness = null, businesses = []) {
@@ -418,17 +422,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         <section class="has-bottom-nav min-h-screen bg-transparent px-4 py-6">
         <div class="max-w-5xl mx-auto space-y-4">
 
-        <header class="aqua-card dashboard-header p-5 space-y-4">
+        <header class="aqua-card dashboard-hero p-5">
 
-        <div class="dashboard-header-top">
-        <div class="dashboard-header-title">
-        <p class="text-sm text-slate-500 dark:text-slate-400">
-        AquaControl
-        </p>
+        <div class="dashboard-hero-top">
 
-        <h1 class="text-3xl font-black leading-tight">
-        ${activeBusiness?.businesses?.name || "AquaControl"}
-        </h1>
+        <div class="dashboard-brand">
+        <div class="dashboard-logo">
+        <img src="./assets/logo-aquacontrol.png" alt="AquaControl">
+        </div>
+
+        <div>
+        <p>AquaControl</p>
+        <h1>${activeBusiness?.businesses?.name || "AquaControl"}</h1>
+        </div>
         </div>
 
         <div class="header-actions">
@@ -448,80 +454,351 @@ document.addEventListener("DOMContentLoaded", async () => {
         <img src="./assets/icons/logout.svg" alt="Salir">
         </button>
         </div>
+
         </div>
 
-        <div class="dashboard-user-info">
-        <p class="text-sm text-slate-500 dark:text-slate-400">
+        <div class="dashboard-hero-divider"></div>
+
+        <div class="dashboard-hero-info">
+
+        <div>
+        <p class="dashboard-welcome">
         Bienvenido, ${profile?.full_name || "Usuario"}
         </p>
 
-        <p id="dashboard-current-date" class="dashboard-info-line">
+        <p id="dashboard-current-date" class="dashboard-date">
         —
         </p>
+        </div>
 
-        <p id="dashboard-weather" class="dashboard-info-line">
+        <div id="dashboard-weather" class="dashboard-weather-pill">
         <span id="weather-icon">🌡️</span>
         <span id="weather-temp">--°C</span>
-        <span id="weather-desc">Cargando clima...</span>
-        </p>
+        <span id="weather-desc">Clima</span>
+        </div>
 
-        <p class="dashboard-role-badge">
+        </div>
+
+        <div class="dashboard-role-row">
+        <span class="dashboard-role-badge">
         Rol: ${profile?.role || "admin"}
-        </p>
+        </span>
         </div>
 
         </header>
 
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Ventas hoy</p>
-        <h2 id="dashboard-sales-today" class="text-2xl font-bold mt-1">$0.00</h2>
+        <section class="dashboard-kpi-grid">
+
+        <div class="dashboard-kpi-card kpi-sales">
+        <div class="dashboard-kpi-icon">💵</div>
+        <p>Ventas hoy</p>
+        <h2 id="dashboard-sales-today">$0.00</h2>
         </div>
 
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Pedidos</p>
-        <h2 id="dashboard-orders-today" class="text-2xl font-bold mt-1">0</h2>
+        <div class="dashboard-kpi-card kpi-orders">
+        <div class="dashboard-kpi-icon">📦</div>
+        <p>Pedidos</p>
+        <h2 id="dashboard-orders-today">0</h2>
         </div>
 
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Gastos mes</p>
-        <h2 id="dashboard-expenses-month" class="text-2xl font-bold mt-1">$0.00</h2>
+        <div class="dashboard-kpi-card kpi-expenses">
+        <div class="dashboard-kpi-icon">💸</div>
+        <p>Gastos mes</p>
+        <h2 id="dashboard-expenses-month">$0.00</h2>
         </div>
+
+        <div class="dashboard-kpi-card kpi-profit">
+        <div class="dashboard-kpi-icon">📈</div>
+        <p>Ganancia</p>
+        <h2 id="dashboard-profit-month">$0.00</h2>
+        </div>
+
         </section>
 
-        <section class="grid grid-cols-2 gap-4">
+        <section class="aqua-card business-health-card p-5">
 
-        <button id="quick-orders" class="aqua-card p-5 text-left active:scale-[0.98]">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Pedidos</p>
-        <h2 class="text-xl font-bold mt-2">Registrar</h2>
-        <p id="quick-orders-count" class="text-sm text-sky-600 dark:text-sky-400 font-bold mt-2">
-        0 pedidos hoy
+        <div class="flex items-center justify-between gap-3">
+        <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Estado general
         </p>
+
+        <h2 class="text-xl font-black">
+        Salud del negocio
+        </h2>
+        </div>
+
+        <div class="business-health-score">
+        <span id="business-health-score">--%</span>
+        </div>
+        </div>
+
+        <div class="business-health-bar mt-5">
+        <div id="business-health-fill" class="business-health-fill" style="width: 0%;"></div>
+        </div>
+
+        <div class="business-health-details mt-4">
+        <div>
+        <span class="health-dot health-good"></span>
+        <span id="health-sales-label">Ventas pendientes</span>
+        </div>
+
+        <div>
+        <span class="health-dot health-good"></span>
+        <span id="health-expenses-label">Gastos pendientes</span>
+        </div>
+
+        <div>
+        <span class="health-dot health-warning"></span>
+        <span id="health-stock-label">Stock pendiente</span>
+        </div>
+        </div>
+
+        </section>
+
+        <section class="aqua-card smart-tip-card p-5">
+
+        <div class="smart-tip-icon" id="smart-tip-icon">
+        💡
+        </div>
+
+        <div class="min-w-0">
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Recomendación
+        </p>
+
+        <h2 id="smart-tip-title" class="text-xl font-black">
+        Analizando negocio...
+        </h2>
+
+        <p id="smart-tip-message" class="smart-tip-message">
+        Revisando ventas, gastos e inventario.
+        </p>
+        </div>
+
+        </section>
+
+        <section class="aqua-card monthly-chart-card p-5">
+
+        <div class="flex items-center justify-between gap-3 mb-4">
+        <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Resumen
+        </p>
+
+        <h2 class="text-xl font-black">
+        Movimiento mensual
+        </h2>
+        </div>
+
+        <span class="monthly-chart-badge">
+        Este mes
+        </span>
+        </div>
+
+        <div class="monthly-chart-list">
+
+        <div class="monthly-chart-item">
+        <div class="monthly-chart-top">
+        <span>Ventas</span>
+        <strong id="monthly-chart-sales">$0.00</strong>
+        </div>
+        <div class="monthly-chart-track">
+        <div id="monthly-chart-sales-bar" class="monthly-chart-fill sales" style="width:0%;"></div>
+        </div>
+        </div>
+
+        <div class="monthly-chart-item">
+        <div class="monthly-chart-top">
+        <span>Gastos</span>
+        <strong id="monthly-chart-expenses">$0.00</strong>
+        </div>
+        <div class="monthly-chart-track">
+        <div id="monthly-chart-expenses-bar" class="monthly-chart-fill expenses" style="width:0%;"></div>
+        </div>
+        </div>
+
+        <div class="monthly-chart-item">
+        <div class="monthly-chart-top">
+        <span>Ganancia</span>
+        <strong id="monthly-chart-profit">$0.00</strong>
+        </div>
+        <div class="monthly-chart-track">
+        <div id="monthly-chart-profit-bar" class="monthly-chart-fill profit" style="width:0%;"></div>
+        </div>
+        </div>
+
+        </div>
+
+        </section>
+
+        <section class="aqua-card goals-card p-5">
+
+        <div class="flex items-center justify-between gap-3 mb-4">
+        <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Objetivos
+        </p>
+
+        <h2 class="text-xl font-black">
+        Metas de venta
+        </h2>
+        </div>
+
+        <span class="goals-badge">
+        Progreso
+        </span>
+        </div>
+
+        <div class="goals-list">
+
+        <div class="goal-item">
+        <div class="goal-top">
+        <span>Meta del día</span>
+        <strong id="goal-today-text">$0.00 / $500.00</strong>
+        </div>
+
+        <div class="goal-track">
+        <div id="goal-today-fill" class="goal-fill today" style="width:0%;"></div>
+        </div>
+        </div>
+
+        <div class="goal-item">
+        <div class="goal-top">
+        <span>Meta mensual</span>
+        <strong id="goal-month-text">$0.00 / $5,000.00</strong>
+        </div>
+
+        <div class="goal-track">
+        <div id="goal-month-fill" class="goal-fill month" style="width:0%;"></div>
+        </div>
+        </div>
+
+        </div>
+
+        </section>
+
+        <section class="quick-actions-section aqua-card p-5">
+
+        <div class="flex items-center justify-between gap-3 mb-4">
+        <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Accesos
+        </p>
+
+        <h2 class="text-xl font-black">
+        Acciones rápidas
+        </h2>
+        </div>
+
+        <span class="quick-actions-badge">
+        4 accesos
+        </span>
+        </div>
+
+        <div class="quick-actions-grid">
+
+        <button id="quick-orders" class="quick-action-card quick-action-orders">
+        <div class="quick-action-icon">
+        <img src="./assets/icons/orders.svg" alt="Pedidos">
+        </div>
+
+        <div>
+        <p>Nuevo pedido</p>
+        <span id="quick-orders-count">0 pedidos hoy</span>
+        </div>
         </button>
 
-        <button id="quick-products" class="aqua-card p-5 text-left active:scale-[0.98]">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Productos</p>
-        <h2 class="text-xl font-bold mt-2">Inventario</h2>
-        <p id="quick-products-count" class="text-sm text-sky-600 dark:text-sky-400 font-bold mt-2">
+        <button id="quick-products" class="quick-action-card quick-action-products">
+        <div class="quick-action-icon">
+        <img src="./assets/icons/products.svg" alt="Productos">
+        </div>
+
+        <div>
+        <p>Inventario</p>
+        <span id="quick-products-count">0 productos</span>
+        </div>
+        </button>
+
+        <button id="quick-expenses" class="quick-action-card quick-action-expenses">
+        <div class="quick-action-icon">
+        <img src="./assets/icons/expenses.svg" alt="Gastos">
+        </div>
+
+        <div>
+        <p>Nuevo gasto</p>
+        <span id="quick-expenses-total">$0.00 este mes</span>
+        </div>
+        </button>
+
+        <button id="quick-reports" class="quick-action-card quick-action-reports">
+        <div class="quick-action-icon">
+        <img src="./assets/icons/download-file.svg" alt="Reportes">
+        </div>
+
+        <div>
+        <p>Reportes</p>
+        <span id="quick-reports-profit">$0.00 ganancia</span>
+        </div>
+        </button>
+
+        </div>
+
+        </section>
+
+        <section class="aqua-card inventory-summary-card p-5">
+
+        <div class="flex items-center justify-between gap-3 mb-4">
+        <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Inventario
+        </p>
+
+        <h2 class="text-xl font-black">
+        Resumen de stock
+        </h2>
+        </div>
+
+        <span class="inventory-summary-total" id="inventory-summary-total">
         0 productos
-        </p>
-        </button>
+        </span>
+        </div>
 
-        <button id="quick-expenses" class="aqua-card p-5 text-left active:scale-[0.98]">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Gastos</p>
-        <h2 class="text-xl font-bold mt-2">Registrar</h2>
-        <p id="quick-expenses-total" class="text-sm text-sky-600 dark:text-sky-400 font-bold mt-2">
-        $0.00 este mes
-        </p>
-        </button>
+        <div class="inventory-summary-grid">
 
-        <button id="quick-reports" class="aqua-card p-5 text-left active:scale-[0.98]">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Reportes</p>
-        <h2 class="text-xl font-bold mt-2">Mensuales</h2>
-        <p id="quick-reports-profit" class="text-sm text-sky-600 dark:text-sky-400 font-bold mt-2">
-        $0.00 ganancia
-        </p>
-        </button>
+        <div class="inventory-summary-item">
+        <span class="inventory-summary-dot high"></span>
+        <div>
+        <p>Stock alto</p>
+        <strong id="inventory-high-count">0</strong>
+        </div>
+        </div>
+
+        <div class="inventory-summary-item">
+        <span class="inventory-summary-dot medium"></span>
+        <div>
+        <p>Stock medio</p>
+        <strong id="inventory-medium-count">0</strong>
+        </div>
+        </div>
+
+        <div class="inventory-summary-item">
+        <span class="inventory-summary-dot low"></span>
+        <div>
+        <p>Stock bajo</p>
+        <strong id="inventory-low-count">0</strong>
+        </div>
+        </div>
+
+        <div class="inventory-summary-item">
+        <span class="inventory-summary-dot empty"></span>
+        <div>
+        <p>Sin stock</p>
+        <strong id="inventory-empty-count">0</strong>
+        </div>
+        </div>
+
+        </div>
 
         </section>
 
@@ -540,25 +817,58 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div id="dashboard-low-stock-list" class="space-y-2"></div>
         </section>
 
-        <section class="aqua-card p-5">
+        <section class="aqua-card dashboard-timeline-card p-5">
+
         <div class="flex items-center justify-between gap-3 mb-4">
         <div>
         <p class="text-sm text-slate-500 dark:text-slate-400">
         Actividad
         </p>
 
-        <h2 class="text-xl font-bold">
+        <h2 class="text-xl font-black">
         Últimos movimientos
         </h2>
         </div>
+
+        <span class="timeline-badge">
+        En vivo
+        </span>
         </div>
 
-        <div id="dashboard-recent-movements" class="space-y-3">
+        <div id="dashboard-recent-movements" class="dashboard-timeline">
         <p class="text-sm text-slate-500 dark:text-slate-400">
         Cargando movimientos...
         </p>
         </div>
+
         </section>
+
+        <div class="dashboard-fab-wrapper">
+
+        <button id="dashboard-fab" class="dashboard-fab" type="button">
+        +
+        </button>
+
+        <div id="dashboard-fab-menu" class="dashboard-fab-menu hidden">
+
+        <button id="fab-new-order" type="button">
+        <span>📦</span>
+        Nuevo pedido
+        </button>
+
+        <button id="fab-new-product" type="button">
+        <span>🧊</span>
+        Nuevo producto
+        </button>
+
+        <button id="fab-new-expense" type="button">
+        <span>💸</span>
+        Nuevo gasto
+        </button>
+
+        </div>
+
+        </div>
 
         ${renderBottomNav("home")}
 
@@ -603,6 +913,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         document.querySelector("#quick-reports")?.addEventListener("click", () => {
             renderReportsView(profile, activeBusiness);
+        });
+
+        document.querySelector("#dashboard-fab")?.addEventListener("click", () => {
+            document.querySelector("#dashboard-fab-menu")?.classList.toggle("hidden");
+        });
+
+        document.querySelector("#fab-new-order")?.addEventListener("click", () => {
+            renderOrdersView(profile, activeBusiness);
+        });
+
+        document.querySelector("#fab-new-product")?.addEventListener("click", () => {
+            renderProductForm(profile, activeBusiness);
+        });
+
+        document.querySelector("#fab-new-expense")?.addEventListener("click", () => {
+            renderExpensesView(profile, activeBusiness);
         });
 
     }
@@ -3131,6 +3457,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         const today = new Date().toISOString().slice(0, 10);
         const currentMonth = new Date().toISOString().slice(0, 7);
 
+        let salesTodayValue = 0;
+        let ordersTodayValue = 0;
+        let expensesMonthValue = 0;
+        let monthProfitValue = 0;
+        let lowStockCountValue = 0;
+        let salesMonthValue = 0;
+
         // PEDIDOS
         const {
             data: orders,
@@ -3155,8 +3488,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                 sum + Number(order.total_profit || 0), 0
             );
 
+            const salesMonth = orders
+            .filter(order => order.created_at?.slice(0, 7) === currentMonth)
+            .reduce((sum, order) =>
+                sum + Number(order.total_sale || 0), 0
+            );
+
+            salesMonthValue = salesMonth;
+
+            salesTodayValue = salesToday;
+            ordersTodayValue = ordersToday.length;
+            monthProfitValue = monthProfit;
+
             document.querySelector("#dashboard-sales-today").textContent = formatCurrency(salesToday);
             document.querySelector("#dashboard-orders-today").textContent = ordersToday.length;
+
+            document.querySelector("#dashboard-profit-month").textContent = formatCurrency(monthProfit);
 
             document.querySelector("#quick-orders-count").textContent =
             `${ordersToday.length} pedido${ordersToday.length === 1 ? "": "s"} hoy`;
@@ -3187,6 +3534,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .reduce((sum, expense) => {
                 const directTotal = Number(expense.total_amount || 0);
 
+
                 if (directTotal > 0) {
                     return sum + directTotal;
                 }
@@ -3198,6 +3546,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return sum + itemsTotal;
             },
                 0);
+
+            expensesMonthValue = expensesMonth;
 
             document.querySelector("#dashboard-expenses-month").textContent =
             formatCurrency(expensesMonth);
@@ -3225,6 +3575,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return Number(product.stock || 0) <= Number(product.min_stock || 0);
             });
 
+            lowStockCountValue = lowStock.length;
+
             const section = document.querySelector("#dashboard-low-stock-section");
             const count = document.querySelector("#dashboard-low-stock-count");
             const list = document.querySelector("#dashboard-low-stock-list");
@@ -3250,7 +3602,191 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
+        let highStock = 0;
+        let mediumStock = 0;
+        let lowStockCount = 0;
+        let emptyStock = 0;
+
+        products.forEach(product => {
+            const stock = Number(product.stock) || 0;
+            const minStock = Number(product.min_stock) || 0;
+
+            if (stock <= 0) {
+                emptyStock++;
+            } else if (stock <= minStock) {
+                lowStockCount++;
+            } else if (minStock > 0 && stock <= minStock * 2) {
+                mediumStock++;
+            } else {
+                highStock++;
+            }
+        });
+
+        document.querySelector("#inventory-summary-total").textContent =
+        `${products.length} producto${products.length === 1 ? "": "s"}`;
+
+        document.querySelector("#inventory-high-count").textContent = highStock;
+        document.querySelector("#inventory-medium-count").textContent = mediumStock;
+        document.querySelector("#inventory-low-count").textContent = lowStockCount;
+        document.querySelector("#inventory-empty-count").textContent = emptyStock;
+
+        updateBusinessHealth( {
+            salesToday: salesTodayValue,
+            ordersToday: ordersTodayValue,
+            expensesMonth: expensesMonthValue,
+            monthProfit: monthProfitValue,
+            lowStockCount: lowStockCountValue
+        });
+
+        updateSmartTip( {
+            salesToday: salesTodayValue,
+            ordersToday: ordersTodayValue,
+            expensesMonth: expensesMonthValue,
+            monthProfit: monthProfitValue,
+            lowStockCount: lowStockCountValue
+        });
+
+        updateMonthlyChart( {
+            salesMonth: salesMonthValue,
+            expensesMonth: expensesMonthValue,
+            monthProfit: monthProfitValue
+        });
+
+        updateGoalsCard( {
+            salesToday: salesTodayValue,
+            monthProfit: monthProfitValue
+        });
+
         await loadRecentMovements(businessId);
+    }
+
+    // Actualizaciones Salud Negocio
+    function updateBusinessHealth( {
+        salesToday = 0,
+        ordersToday = 0,
+        expensesMonth = 0,
+        monthProfit = 0,
+        lowStockCount = 0
+    }) {
+        let score = 100;
+
+        if (ordersToday <= 0) score -= 15;
+        if (salesToday <= 0) score -= 15;
+        if (expensesMonth > monthProfit && monthProfit > 0) score -= 20;
+        if (monthProfit <= 0) score -= 20;
+        if (lowStockCount > 0) score -= Math.min(lowStockCount * 10, 30);
+
+        score = Math.max(0, Math.min(100, score));
+
+        const scoreEl = document.querySelector("#business-health-score");
+        const fillEl = document.querySelector("#business-health-fill");
+        const salesLabel = document.querySelector("#health-sales-label");
+        const expensesLabel = document.querySelector("#health-expenses-label");
+        const stockLabel = document.querySelector("#health-stock-label");
+
+        if (scoreEl) scoreEl.textContent = `${score}%`;
+        if (fillEl) fillEl.style.width = `${score}%`;
+
+        if (salesLabel) {
+            salesLabel.textContent = salesToday > 0
+            ? "Ventas activas hoy": "Sin ventas hoy";
+        }
+
+        if (expensesLabel) {
+            expensesLabel.textContent = expensesMonth <= monthProfit
+            ? "Gastos controlados": "Gastos altos";
+        }
+
+        if (stockLabel) {
+            stockLabel.textContent = lowStockCount > 0
+            ? `${lowStockCount} producto(s) bajo stock`: "Inventario saludable";
+        }
+    }
+
+    // Tips Inteligentes
+    function updateSmartTip( {
+        salesToday = 0,
+        ordersToday = 0,
+        expensesMonth = 0,
+        monthProfit = 0,
+        lowStockCount = 0
+    }) {
+        const icon = document.querySelector("#smart-tip-icon");
+        const title = document.querySelector("#smart-tip-title");
+        const message = document.querySelector("#smart-tip-message");
+
+        if (!icon || !title || !message) return;
+
+        if (lowStockCount > 0) {
+            icon.textContent = "⚠️";
+            title.textContent = "Inventario por revisar";
+            message.textContent = `Tienes ${lowStockCount} producto(s) con stock bajo. Conviene reabastecer antes de quedarte sin venta.`;
+            return;
+        }
+
+        if (ordersToday <= 0) {
+            icon.textContent = "📦";
+            title.textContent = "Aún no hay pedidos hoy";
+            message.textContent = "Puedes registrar un nuevo pedido desde acciones rápidas o revisar productos disponibles.";
+            return;
+        }
+
+        if (expensesMonth > monthProfit && monthProfit > 0) {
+            icon.textContent = "💸";
+            title.textContent = "Gastos elevados";
+            message.textContent = "Los gastos del mes están altos frente a la ganancia. Revisa compras e insumos.";
+            return;
+        }
+
+        if (monthProfit > 0) {
+            icon.textContent = "✅";
+            title.textContent = "Buen ritmo";
+            message.textContent = "Tu negocio muestra ganancia positiva y el inventario se ve saludable.";
+            return;
+        }
+
+        icon.textContent = "💡";
+        title.textContent = "Listo para operar";
+        message.textContent = "Cuando registres pedidos, gastos o productos, AquaControl actualizará este resumen.";
+    }
+
+    // Grafica Visual Estado Negocio
+    function updateMonthlyChart( {
+        salesMonth = 0,
+        expensesMonth = 0,
+        monthProfit = 0
+    }) {
+        const maxValue = Math.max(salesMonth, expensesMonth, monthProfit, 1);
+
+        const salesPercent = Math.round((salesMonth / maxValue) * 100);
+        const expensesPercent = Math.round((expensesMonth / maxValue) * 100);
+        const profitPercent = Math.round((monthProfit / maxValue) * 100);
+
+        document.querySelector("#monthly-chart-sales").textContent = formatCurrency(salesMonth);
+        document.querySelector("#monthly-chart-expenses").textContent = formatCurrency(expensesMonth);
+        document.querySelector("#monthly-chart-profit").textContent = formatCurrency(monthProfit);
+
+        document.querySelector("#monthly-chart-sales-bar").style.width = `${salesPercent}%`;
+        document.querySelector("#monthly-chart-expenses-bar").style.width = `${expensesPercent}%`;
+        document.querySelector("#monthly-chart-profit-bar").style.width = `${profitPercent}%`;
+    }
+
+    // Metas del Mes
+    function updateGoalsCard( {
+        salesToday = 0,
+        monthProfit = 0
+    }) {
+        const todayPercent = Math.min((salesToday / DAILY_SALES_GOAL) * 100, 100);
+        const monthPercent = Math.min((monthProfit / MONTHLY_PROFIT_GOAL) * 100, 100);
+
+        document.querySelector("#goal-today-text").textContent =
+        `${formatCurrency(salesToday)} / ${formatCurrency(DAILY_SALES_GOAL)}`;
+
+        document.querySelector("#goal-month-text").textContent =
+        `${formatCurrency(monthProfit)} / ${formatCurrency(MONTHLY_PROFIT_GOAL)}`;
+
+        document.querySelector("#goal-today-fill").style.width = `${todayPercent}%`;
+        document.querySelector("#goal-month-fill").style.width = `${monthPercent}%`;
     }
 
     // Hora y Temperatura Actual Dashboard
@@ -3750,28 +4286,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             type: "order",
             date: order.created_at,
             html: `
-            <div class="movement-card movement-order">
-            <div class="movement-icon">📦</div>
+            <div class="timeline-item timeline-order">
 
-            <div class="flex-1 min-w-0">
-            <p class="font-bold text-slate-900 dark:text-white">
+            <div class="timeline-dot">
+            📦
+            </div>
+
+            <div class="timeline-content">
+            <p class="timeline-title">
             Pedido #${String(order.order_number || 0).padStart(4, "0")}
             </p>
 
-            <p class="text-sm text-slate-500 dark:text-slate-400 truncate">
+            <p class="timeline-subtitle">
             Cliente: ${order.clients?.name || "Sin cliente"}
             </p>
             </div>
 
-            <div class="text-right">
-            <p class="font-black text-sky-600 dark:text-sky-400">
-            ${formatCurrency(order.total_sale || 0)}
-            </p>
-
-            <p class="movement-date">
-            ${formatDate(order.created_at)}
-            </p>
+            <div class="timeline-meta">
+            <p>${formatCurrency(order.total_sale || 0)}</p>
+            <span>${formatDate(order.created_at)}</span>
             </div>
+
             </div>
             `
         }));
@@ -3780,28 +4315,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             type: "expense",
             date: expense.created_at,
             html: `
-            <div class="movement-card movement-expense">
-            <div class="movement-icon">💸</div>
+            <div class="timeline-item timeline-expense">
 
-            <div class="flex-1 min-w-0">
-            <p class="font-bold text-slate-900 dark:text-white">
+            <div class="timeline-dot">
+            💸
+            </div>
+
+            <div class="timeline-content">
+            <p class="timeline-title">
             Gasto #${String(expense.expense_number || 0).padStart(4, "0")}
             </p>
 
-            <p class="text-sm text-slate-500 dark:text-slate-400 truncate">
+            <p class="timeline-subtitle">
             ${expense.category || "Sin categoría"}
             </p>
             </div>
 
-            <div class="text-right">
-            <p class="font-black text-rose-600 dark:text-rose-400">
-            ${formatCurrency(expense.total_amount || 0)}
-            </p>
-
-            <p class="movement-date">
-            ${formatDate(expense.created_at)}
-            </p>
+            <div class="timeline-meta">
+            <p>${formatCurrency(expense.total_amount || 0)}</p>
+            <span>${formatDate(expense.created_at)}</span>
             </div>
+
             </div>
             `
         }));
@@ -3815,9 +4349,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (merged.length === 0) {
             container.innerHTML = `
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-            Sin movimientos recientes.
-            </p>
+            <div class="timeline-empty">
+            <div>🧾</div>
+            <p>Sin movimientos recientes.</p>
+            <span>Cuando registres pedidos o gastos, aparecerán aquí.</span>
+            </div>
             `;
             return;
         }
