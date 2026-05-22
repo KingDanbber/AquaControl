@@ -3,7 +3,7 @@ const CACHE_NAME = "aquacontrol-v1";
 const APP_FILES = [
   "./",
   "./index.html",
-  "./manifest.json",
+  "./pwa/manifest.json",
   "./assets/logo-aquacontrol.png"
 ];
 
