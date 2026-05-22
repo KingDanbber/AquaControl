@@ -470,12 +470,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         —
         </p>
         </div>
+        
+        <div id="dashboard-status-banner"
+        class="dashboard-status-banner">
+
+        ✨ Cargando estado...
+
+        </div>
 
         <div id="dashboard-weather" class="dashboard-weather-pill">
         <span id="weather-icon">🌡️</span>
         <span id="weather-temp">--°C</span>
         <span id="weather-desc">Clima</span>
         </div>
+
+        
 
         </div>
 
@@ -3449,6 +3458,79 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    // Actualización Estado Negocio Header
+    function updateDashboardHeroStatus( {
+        salesToday = 0,
+        lowStock = 0,
+        monthProfit = 0
+    }) {
+        
+        const role =
+        document.querySelector(
+            ".dashboard-role-badge"
+        );
+
+        if (role) {
+
+            role.style.display =
+            salesToday === 0 ||
+            lowStock > 0
+            ? "none": "inline-flex";
+
+        }
+
+        const el =
+        document.querySelector(
+            "#dashboard-status-banner"
+        );
+
+        if (!el) return;
+
+        if (salesToday === 0) {
+
+            el.className =
+            "dashboard-status-banner warning";
+
+            el.innerHTML =
+            "📦 Primer pedido del día pendiente";
+
+            return;
+
+        }
+
+        if (lowStock > 0) {
+
+            el.className =
+            "dashboard-status-banner danger";
+
+            el.innerHTML =
+            `⚠️ ${lowStock} producto(s) necesitan reabastecimiento`;
+
+            return;
+
+        }
+
+        if (monthProfit > 1000) {
+
+            el.className =
+            "dashboard-status-banner success";
+
+            el.innerHTML =
+            "🚀 Excelente ritmo este mes";
+
+            return;
+
+        }
+
+        el.className =
+        "dashboard-status-banner good";
+
+        el.innerHTML =
+        "✨ Todo funcionando correctamente";
+
+
+    }
+
     // Cargar Datos Dashboard
 
     async function loadDashboardStats(businessId) {
@@ -3577,6 +3659,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             lowStockCountValue = lowStock.length;
 
+            updateDashboardHeroStatus( {
+                salesToday: salesTodayValue,
+                lowStock: lowStock.length,
+                monthProfit: monthProfitValue
+            });
+
             const section = document.querySelector("#dashboard-low-stock-section");
             const count = document.querySelector("#dashboard-low-stock-count");
             const list = document.querySelector("#dashboard-low-stock-list");
@@ -3656,6 +3744,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             salesToday: salesTodayValue,
             monthProfit: monthProfitValue
         });
+
+
 
         await loadRecentMovements(businessId);
     }
