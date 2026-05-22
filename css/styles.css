@@ -2384,3 +2384,74 @@ html.dark .dashboard-role-badge {
     color: #bae6fd;
     border-color: rgba(56,189,248,0.25);
 }
+
+/* HERO STATUS */
+
+.dashboard-status-banner{
+
+margin-top:14px;
+
+padding:14px 16px;
+
+border-radius:22px;
+
+font-size:14px;
+
+font-weight:800;
+
+display:flex;
+align-items:center;
+gap:10px;
+
+background:
+linear-gradient(
+135deg,
+rgba(255,255,255,.72),
+rgba(255,255,255,.45)
+);
+
+backdrop-filter:blur(10px);
+
+box-shadow:
+0 8px 20px rgba(15,23,42,.06);
+
+border:
+1px solid rgba(255,255,255,.45);
+
+color:#0f172a;
+
+transition:.3s;
+
+}
+
+.dashboard-status-banner.good{
+
+color:#166534;
+
+}
+
+.dashboard-status-banner.warning{
+
+color:#92400e;
+
+}
+
+.dashboard-status-banner.danger{
+
+color:#991b1b;
+
+}
+
+.dashboard-status-banner.success{
+
+color:#065f46;
+
+}
+
+.dashboard-role-badge{
+
+transition:
+opacity .25s,
+transform .25s;
+
+}
