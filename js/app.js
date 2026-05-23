@@ -470,7 +470,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         —
         </p>
         </div>
-        
+
         <div id="dashboard-status-banner"
         class="dashboard-status-banner">
 
@@ -484,7 +484,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <span id="weather-desc">Clima</span>
         </div>
 
-        
+
 
         </div>
 
@@ -641,6 +641,82 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         </section>
 
+        <section id="dashboard-trend-section" class="aqua-card p-5 hidden">
+
+        <div class="flex justify-between items-start mb-4">
+
+        <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Comparativa
+        </p>
+
+        <h2 class="text-2xl font-black">
+        Tendencia mensual
+        </h2>
+
+        <p
+        id="trend-period"
+        class="text-sm text-slate-500 mt-1"
+        >
+        vs mes anterior
+        </p>
+
+        </div>
+
+        <div
+        id="trend-status"
+        class="badge badge-success"
+        >
+        —
+        </div>
+
+        </div>
+
+
+        <div class="space-y-4">
+
+        <div class="trend-row">
+
+        <span>📈 Ventas</span>
+
+        <div>
+        <span id="trend-sales">
+        —
+        </span>
+        </div>
+
+        </div>
+
+
+        <div class="trend-row">
+
+        <span>📉 Gastos</span>
+
+        <div>
+        <span id="trend-expenses">
+        —
+        </span>
+        </div>
+
+        </div>
+
+
+        <div class="trend-row">
+
+        <span>📈 Ganancia</span>
+
+        <div>
+        <span id="trend-profit">
+        —
+        </span>
+        </div>
+
+        </div>
+
+        </div>
+
+        </section>
+
         <section class="aqua-card goals-card p-5">
 
         <div class="flex items-center justify-between gap-3 mb-4">
@@ -654,9 +730,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         </h2>
         </div>
 
-        <span class="goals-badge">
-        Progreso
-        </span>
+        <button
+        id="btn-edit-goals"
+        type="button"
+        class="goals-edit-btn"
+        >
+        ⚙️ Ajustar metas
+        </button>
         </div>
 
         <div class="goals-list">
@@ -670,6 +750,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="goal-track">
         <div id="goal-today-fill" class="goal-fill today" style="width:0%;"></div>
         </div>
+        <p id="goal-today-status" class="goal-status-text">
+        —
+        </p>
         </div>
 
         <div class="goal-item">
@@ -681,6 +764,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="goal-track">
         <div id="goal-month-fill" class="goal-fill month" style="width:0%;"></div>
         </div>
+        <p id="goal-month-status" class="goal-status-text">
+        —
+        </p>
         </div>
 
         </div>
@@ -940,6 +1026,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             renderExpensesView(profile, activeBusiness);
         });
 
+        document.querySelector("#btn-edit-goals")?.addEventListener("click", () => {
+            openGoalsModal(activeBusiness?.businesses?.id);
+        });
+
     }
 
     function renderBottomNav(active = "home") {
@@ -1008,11 +1098,184 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
+    // Esditar Ventas mensuales
+    async function openGoalsModal(businessId) {
+        if (!businessId) {
+            showToast("No se encontró negocio activo.", "error");
+            return;
+        }
+
+        let dailyGoal = DAILY_SALES_GOAL;
+        let monthlyGoal = MONTHLY_PROFIT_GOAL;
+        let goalMode = "manual";
+
+        const {
+            data
+        } = await supabaseClient
+        .from("business_goals")
+        .select("*")
+        .eq("business_id", businessId)
+        .maybeSingle();
+
+        if (data) {
+            dailyGoal = Number(data.daily_sales_goal || DAILY_SALES_GOAL);
+            monthlyGoal = Number(data.monthly_profit_goal || MONTHLY_PROFIT_GOAL);
+            goalMode = data.goal_mode || "manual";
+        }
+
+        const modal = document.createElement("div");
+        modal.id = "goals-modal";
+        modal.className = "goals-modal-backdrop";
+
+        modal.innerHTML = `
+        <div class="goals-modal-card">
+
+        <div class="goals-modal-header">
+        <div>
+        <p>Objetivos</p>
+        <h2>Ajustar metas</h2>
+        </div>
+
+        <button id="close-goals-modal" type="button">
+        ×
+        </button>
+        </div>
+
+        <form id="goals-form" class="goals-form">
+
+        <label>
+        <span>Meta diaria de ventas</span>
+        <input
+        id="goal-daily-input"
+        type="number"
+        min="0"
+        step="1"
+        value="${dailyGoal}"
+        />
+        </label>
+
+        <label>
+        <span>Meta mensual de ganancia</span>
+        <input
+        id="goal-monthly-input"
+        type="number"
+        min="0"
+        step="1"
+        value="${monthlyGoal}"
+        />
+        </label>
+
+        <label>
+        <span>Modo de metas</span>
+        <select id="goal-mode-input">
+        <option value="manual" ${goalMode === "manual" ? "selected": ""}>
+        Manual
+        </option>
+        <option value="auto" ${goalMode === "auto" ? "selected": ""}>
+        Automático
+        </option>
+        </select>
+        </label>
+
+        <button id="btn-save-goals" type="submit">
+        Guardar metas
+        </button>
+
+        </form>
+
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document.querySelector("#close-goals-modal")?.addEventListener("click", () => {
+            modal.remove();
+        });
+
+        modal.addEventListener("click", (event) => {
+            if (event.target.id === "goals-modal") {
+                modal.remove();
+            }
+        });
+
+        document.querySelector("#goals-form")?.addEventListener("submit",
+            async (event) => {
+                event.preventDefault();
+
+                const button = document.querySelector("#btn-save-goals");
+
+                const payload = {
+                    business_id: businessId,
+                    daily_sales_goal: Number(document.querySelector("#goal-daily-input").value) || 0,
+                    monthly_profit_goal: Number(document.querySelector("#goal-monthly-input").value) || 0,
+                    goal_mode: document.querySelector("#goal-mode-input").value,
+                    updated_at: new Date().toISOString()
+                };
+
+                try {
+                    setButtonLoading(button, true, "Guardando...");
+
+                    const {
+                        error
+                    } = await supabaseClient
+                    .from("business_goals")
+                    .upsert(payload, {
+                        onConflict: "business_id"
+                    });
+
+                    if (error) throw error;
+
+                    showToast("Metas actualizadas correctamente.", "success");
+                    modal.remove();
+
+                    await loadDashboardStats(businessId);
+
+                } catch (error) {
+                    console.error(error);
+                    showToast(error.message || "No se pudieron guardar las metas.", "error");
+                } finally {
+                    setButtonLoading(button, false);
+                }
+            });
+    }
+
+    // Lectura Metas Mensuales desde DB
+    async function getBusinessGoals(businessId) {
+        const defaultGoals = {
+            daily_sales_goal: DAILY_SALES_GOAL,
+            monthly_profit_goal: MONTHLY_PROFIT_GOAL,
+            goal_mode: "manual"
+        };
+
+        if (!businessId) return defaultGoals;
+
+        const {
+            data,
+            error
+        } = await supabaseClient
+        .from("business_goals")
+        .select("daily_sales_goal, monthly_profit_goal, goal_mode")
+        .eq("business_id", businessId)
+        .maybeSingle();
+
+        if (error) {
+            console.error(error);
+            return defaultGoals;
+        }
+
+        return {
+            daily_sales_goal: Number(data?.daily_sales_goal || DAILY_SALES_GOAL),
+            monthly_profit_goal: Number(data?.monthly_profit_goal || MONTHLY_PROFIT_GOAL),
+            goal_mode: data?.goal_mode || "manual"
+        };
+    }
+
     /* =================
     Función Sección Productos
     ================== */
 
-    async function renderProductsView(profile, activeBusiness) {
+    async function renderProductsView(profile,
+        activeBusiness) {
         const app = document.querySelector("#app");
         const businessId = activeBusiness?.businesses?.id;
 
@@ -1055,21 +1318,28 @@ document.addEventListener("DOMContentLoaded", async () => {
         </section>
         `;
 
-        bindBottomNav(profile, activeBusiness);
+        bindBottomNav(profile,
+            activeBusiness);
 
-        document.querySelector("#btn-new-product")?.addEventListener("click", () => {
-            renderProductForm(profile, activeBusiness);
-        });
-        document.querySelector("#btn-products-pdf")?.addEventListener("click", async () => {
-            await downloadProductsPDF(activeBusiness?.businesses?.id);
-        });
+        document.querySelector("#btn-new-product")?.addEventListener("click",
+            () => {
+                renderProductForm(profile, activeBusiness);
+            });
+        document.querySelector("#btn-products-pdf")?.addEventListener("click",
+            async () => {
+                await downloadProductsPDF(activeBusiness?.businesses?.id);
+            });
 
-        await loadProducts(profile, activeBusiness, activeBusiness?.businesses?.id);
+        await loadProducts(profile,
+            activeBusiness,
+            activeBusiness?.businesses?.id);
     }
 
     // Función Cargar Productos
 
-    async function loadProducts(profile, activeBusiness, businessId) {
+    async function loadProducts(profile,
+        activeBusiness,
+        businessId) {
         const container = document.querySelector("#products-list");
 
         if (!businessId) {
@@ -1784,58 +2054,93 @@ document.addEventListener("DOMContentLoaded", async () => {
         <section class="has-bottom-nav min-h-screen bg-slate-100 bg-transparent px-4 py-6">
         <div class="max-w-5xl mx-auto space-y-4">
 
-        <header class="aqua-card p-5 flex flex-col gap-4">
+        <header class="aqua-card orders-hero p-5">
+
+        <div class="orders-hero-top">
+
         <div>
-        <p class="text-sm text-slate-500 dark:text-slate-400">Módulo</p>
-        <h1 class="text-2xl font-bold">Pedidos</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        Registro y tabla de pedidos del negocio.
+        <p class="orders-eyebrow">Módulo</p>
+        <h1>Pedidos</h1>
+        <p class="orders-subtitle">
+        Registro y control de pedidos del negocio.
         </p>
         </div>
+
+        <div class="orders-hero-icon">
+        <img src="./assets/icons/orders.svg" alt="Pedidos">
+        </div>
+
+        </div>
+
+        <div class="orders-actions-grid">
 
         <button
         id="btn-new-order"
-        class="w-full bg-sky-600 hover:bg-sky-500 text-white rounded-2xl py-3 font-semibold"
+        class="orders-primary-btn"
         >
-        + Nuevo pedido
+        <span>+</span>
+        Nuevo pedido
         </button>
+
         <button
         id="btn-download-orders-pdf"
-        class="w-full bg-white/80 dark:bg-slate-900 border border-sky-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl py-3 font-semibold flex items-center justify-center gap-2"
+        class="orders-secondary-btn"
         >
-        <img src="./assets/icons/download-file.svg" class="w-6 h-6" alt="Descargar">
+        <img src="./assets/icons/download-file.svg" alt="Descargar">
         PDF Pedidos
         </button>
+
+        </div>
+
         </header>
 
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Pedidos hoy</p>
-        <h2 id="orders-today-count" class="text-2xl font-bold mt-1">0</h2>
+        <section class="orders-kpi-grid">
+
+        <div class="orders-kpi-card">
+        <div class="orders-kpi-icon orders-kpi-orders">📦</div>
+        <p>Pedidos hoy</p>
+        <h2 id="orders-today-count">0</h2>
         </div>
 
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Ventas pedidos</p>
-        <h2 id="orders-total-sale" class="text-2xl font-bold mt-1">$0.00</h2>
+        <div class="orders-kpi-card">
+        <div class="orders-kpi-icon orders-kpi-sales">💵</div>
+        <p>Ventas pedidos</p>
+        <h2 id="orders-total-sale">$0.00</h2>
         </div>
 
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Ganancia</p>
-        <h2 id="orders-total-profit" class="text-2xl font-bold mt-1">$0.00</h2>
+        <div class="orders-kpi-card">
+        <div class="orders-kpi-icon orders-kpi-profit">📈</div>
+        <p>Ganancia</p>
+        <h2 id="orders-total-profit">$0.00</h2>
         </div>
+
         </section>
 
-        <section class="aqua-card p-5">
+        <section class="aqua-card orders-list-card p-5">
+
         <div class="flex items-center justify-between gap-3 mb-4">
         <div>
-        <h2 class="text-lg font-bold">Tabla de pedidos</h2>
         <p class="text-sm text-slate-500 dark:text-slate-400">
-        Aquí aparecerán los pedidos registrados.
+        Historial
+        </p>
+
+        <h2 class="text-2xl font-black">
+        Pedidos registrados
+        </h2>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Consulta ventas, clientes y ganancias.
         </p>
         </div>
         </div>
 
-        <div class="aqua-table-wrapper">
+        <div id="orders-mobile-list" class="orders-mobile-list">
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Cargando pedidos...
+        </p>
+        </div>
+
+        <div class="aqua-table-wrapper orders-desktop-table">
         <table class="aqua-table">
         <thead>
         <tr>
@@ -1860,6 +2165,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         </tbody>
         </table>
         </div>
+
         </section>
 
         ${renderBottomNav("orders")}
@@ -1888,6 +2194,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadOrders(businessId) {
         const tbody = document.querySelector("#orders-table-body");
+        const mobileList = document.querySelector("#orders-mobile-list");
 
         if (!businessId) {
             tbody.innerHTML = `
@@ -1980,6 +2287,26 @@ document.addEventListener("DOMContentLoaded", async () => {
             .map(item => `${item.product_name} x${item.quantity}`)
             .join(", "): "—";
 
+            if (mobileList) {
+                mobileList.innerHTML = `
+                <div class="orders-empty-state">
+                <div>📦</div>
+                <p>Sin pedidos registrados.</p>
+                <span>Cuando registres pedidos aparecerán aquí.</span>
+                </div>
+                `;
+            }
+
+            if (mobileList) {
+                mobileList.innerHTML = `
+                <div class="orders-empty-state">
+                <div>⚠️</div>
+                <p>Error al cargar pedidos.</p>
+                <span>Intenta recargar la sección.</span>
+                </div>
+                `;
+            }
+
             return `
             <tr>
             <td>#${String(order.order_number).padStart(4, "0")}</td>
@@ -1998,6 +2325,197 @@ document.addEventListener("DOMContentLoaded", async () => {
             </tr>
             `;
         }).join("");
+
+        if (mobileList) {
+            mobileList.innerHTML = data.map(order => {
+                const productsHTML = order.order_items?.length
+                ? order.order_items.map(item => {
+
+                    const icon =
+                    item.product_name
+                    .toLowerCase()
+                    .includes("agua")
+
+                    ? "🧴": item.product_name
+                    .toLowerCase()
+                    .includes("hielo")
+
+                    ? "🧊": "📦";
+
+                    return `
+                    <div class="product-chip">
+
+                    <span class="product-chip-icon">
+                    ${icon}
+                    </span>
+
+                    <span class="product-chip-text">
+                    ${item.product_name}
+                    </span>
+
+                    <span class="product-chip-qty">
+                    ×${item.quantity}
+                    </span>
+
+                    </div>
+                    `;
+
+                }).join(""): `
+                <div class="product-chip-empty">
+                Sin productos
+                </div>
+                `;
+
+                const orderId = order.id;
+                const orderNumber = String(order.order_number || 0).padStart(4, "0");
+
+                return `
+                <article class="order-mobile-card order-accordion-card">
+
+                <button
+                type="button"
+                class="order-accordion-toggle"
+                data-order-id="${orderId}"
+                >
+
+                <div class="order-mobile-header">
+                <div class="order-mobile-icon">📦</div>
+
+                <div class="min-w-0">
+                <p class="order-mobile-eyebrow">
+                Pedido #${orderNumber}
+                </p>
+
+                <h3>
+                ${order.clients?.name || "Sin cliente"}
+                </h3>
+
+                <p class="order-mobile-date">
+                ${formatDate(order.created_at)}
+                </p>
+                </div>
+
+                <div class="order-accordion-right">
+                <span class="badge ${getOrderStatusClass(order.status)}">
+                ${getOrderStatusLabel(order.status)}
+                </span>
+
+                <strong>
+                ${formatCurrency(order.total_sale)}
+                </strong>
+
+                <span class="order-chevron">
+                ▼
+                </span>
+                <div class="order-progress">
+                <div
+                class="order-progress-fill ${getOrderProgressClass(order.status)}"
+                style="width: ${getOrderProgress(order.status)}%;"
+                ></div>
+                </div>
+                <p class="order-progress-text">
+                ${getOrderStage(order.status)}
+                </p>
+                </div>
+                </div>
+
+                </button>
+
+                <div
+                id="order-detail-${orderId}"
+                class="order-accordion-detail hidden"
+                >
+
+                <div class="order-mobile-products">
+                ${productsHTML}
+                </div>
+
+                <div class="order-mobile-totals">
+                <div>
+                <span>Venta</span>
+                <strong>${formatCurrency(order.total_sale)}</strong>
+                </div>
+
+                <div>
+                <span>Costo</span>
+                <strong>${formatCurrency(order.total_cost)}</strong>
+                </div>
+
+                <div>
+                <span>Ganancia</span>
+                <strong>${formatCurrency(order.total_profit)}</strong>
+                </div>
+                </div>
+
+                <div class="order-detail-grid">
+                <div>
+                <span>Vendedor</span>
+                <strong>${order.profiles?.full_name || "—"}</strong>
+                </div>
+
+                <div>
+                <span>Fecha</span>
+                <strong>${formatDate(order.created_at)}</strong>
+                </div>
+                </div>
+
+                </div>
+
+                </article>
+                `;
+            }).join("");
+
+            document.querySelectorAll(".order-accordion-toggle").forEach(button => {
+                button.addEventListener("click", () => {
+                    const orderId = button.dataset.orderId;
+                    const detail = document.querySelector(`#order-detail-${orderId}`);
+                    const card = button.closest(".order-accordion-card");
+
+                    detail?.classList.toggle("hidden");
+                    card?.classList.toggle("is-open");
+                });
+            });
+        }
+    }
+
+    // Barra Progreso Estatus Pedidos
+    function getOrderProgress(status) {
+        const progress = {
+            pendiente: 25,
+            en_proceso: 60,
+            entregado: 90,
+            pagado: 100,
+            cancelado: 0
+        };
+
+        return progress[status] ?? 25;
+    }
+
+    function getOrderProgressClass(status) {
+        const classes = {
+            pendiente: "order-progress-warning",
+            en_proceso: "order-progress-info",
+            entregado: "order-progress-success",
+            pagado: "order-progress-success",
+            cancelado: "order-progress-danger"
+        };
+
+        return classes[status] || "order-progress-warning";
+    }
+
+    //Mapeo Estatus Pedidos
+    function getOrderStage(status) {
+
+        const stages = {
+            pendiente: "Preparando",
+            en_proceso: "En ruta",
+            entregado: "Entregado",
+            pagado: "Finalizado",
+            cancelado: "Cancelado"
+        };
+
+        return stages[status] || "Pendiente";
+
     }
 
     // Función Estatus de Pedidos
@@ -2028,7 +2546,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     //Funcion Forma Agregar Pedidos
 
-    function renderOrderForm(profile, activeBusiness) {
+    function renderOrderForm(profile,
+        activeBusiness) {
         const app = document.querySelector("#app");
 
         app.innerHTML = `
@@ -2201,30 +2720,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         </section>
         `;
 
-        bindBottomNav(profile, activeBusiness);
+        bindBottomNav(profile,
+            activeBusiness);
 
         loadClientsForOrder(activeBusiness?.businesses?.id);
 
-        document.querySelector("#back-orders")?.addEventListener("click", () => {
-            renderOrdersView(profile, activeBusiness);
-        });
+        document.querySelector("#back-orders")?.addEventListener("click",
+            () => {
+                renderOrdersView(profile, activeBusiness);
+            });
 
         let orderItems = [];
 
-        document.querySelector("#btn-add-order-item")?.addEventListener("click", async () => {
-            await addOrderItemRow(activeBusiness?.businesses?.id, orderItems);
-        });
+        document.querySelector("#btn-add-order-item")?.addEventListener("click",
+            async () => {
+                await addOrderItemRow(activeBusiness?.businesses?.id, orderItems);
+            });
 
-        document.querySelector("#order-form")?.addEventListener("submit", async (event) => {
-            event.preventDefault();
+        document.querySelector("#order-form")?.addEventListener("submit",
+            async (event) => {
+                event.preventDefault();
 
-            await saveOrder(profile, activeBusiness);
-        });
+                await saveOrder(profile, activeBusiness);
+            });
     }
 
     // Función Agregar Productos Pedidos
 
-    async function addOrderItemRow(businessId, orderItems) {
+    async function addOrderItemRow(businessId,
+        orderItems) {
         const container = document.querySelector("#order-items-container");
 
         if (!businessId) {
@@ -3464,7 +3988,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         lowStock = 0,
         monthProfit = 0
     }) {
-        
+
         const role =
         document.querySelector(
             ".dashboard-role-badge"
@@ -3740,14 +4264,403 @@ document.addEventListener("DOMContentLoaded", async () => {
             monthProfit: monthProfitValue
         });
 
+        const goals = await getBusinessGoals(businessId);
+
         updateGoalsCard( {
             salesToday: salesTodayValue,
-            monthProfit: monthProfitValue
+            monthProfit: monthProfitValue,
+            dailyGoal: goals.daily_sales_goal,
+            monthlyGoal: goals.monthly_profit_goal
         });
 
-
-
         await loadRecentMovements(businessId);
+        await loadMonthlyTrend(
+            businessId
+        );
+    }
+
+    // Calcular Vs Tendencias Anteriores
+    async function loadMonthlyTrend(
+        businessId
+    ) {
+
+        if (!businessId) return;
+
+        const currentMonth =
+        new Date()
+        .toISOString()
+        .slice(0, 7);
+
+        const prevDate =
+        new Date();
+
+        prevDate.setMonth(
+            prevDate.getMonth()-1
+        );
+
+        const previousMonth =
+        prevDate
+        .toISOString()
+        .slice(0, 7);
+
+
+        const {
+            data: orders
+        } =
+        await supabaseClient
+        .from("orders")
+        .select(`
+            created_at,
+            total_sale,
+            total_profit
+            `)
+        .eq(
+            "business_id",
+            businessId
+        );
+
+
+        const {
+            data: expenses
+        } =
+        await supabaseClient
+        .from("expenses")
+        .select(`
+            created_at,
+            total_amount
+            `)
+        .eq(
+            "business_id",
+            businessId
+        );
+
+
+        const currentSales =
+        (orders || [])
+        .filter(x =>
+            x.created_at?.startsWith(currentMonth)
+        )
+        .reduce(
+            (s, x)=>
+            s+Number(
+                x.total_sale || 0
+            ),
+            0
+        );
+
+
+        const previousSales =
+        (orders || [])
+        .filter(x =>
+            x.created_at?.startsWith(previousMonth)
+        )
+        .reduce(
+            (s, x)=>
+            s+Number(
+                x.total_sale || 0
+            ),
+            0
+        );
+
+
+        const currentProfit =
+        (orders || [])
+        .filter(x =>
+            x.created_at?.startsWith(currentMonth)
+        )
+        .reduce(
+            (s, x)=>
+            s+Number(
+                x.total_profit || 0
+            ),
+            0
+        );
+
+
+        const previousProfit =
+        (orders || [])
+        .filter(x =>
+            x.created_at?.startsWith(previousMonth)
+        )
+        .reduce(
+            (s, x)=>
+            s+Number(
+                x.total_profit || 0
+            ),
+            0
+        );
+
+
+        const currentExpenses =
+        (expenses || [])
+        .filter(x =>
+            x.created_at?.startsWith(currentMonth)
+        )
+        .reduce(
+            (s, x)=>
+            s+Number(
+                x.total_amount || 0
+            ),
+            0
+        );
+
+
+        const previousExpenses =
+        (expenses || [])
+        .filter(x =>
+            x.created_at?.startsWith(previousMonth)
+        )
+        .reduce(
+            (s, x)=>
+            s+Number(
+                x.total_amount || 0
+            ),
+            0
+        );
+
+
+        function diff(now, before) {
+
+            if (before === 0) {
+
+                return 0;
+
+            }
+
+            return (
+                (
+                    now-before
+                )
+                /
+                before
+            )
+            *
+            100;
+
+        }
+
+
+        const previousTotal =
+        previousSales
+        +
+        previousExpenses
+        +
+        previousProfit;
+
+
+        if (
+            previousTotal === 0
+        ) {
+
+            document
+            .querySelector(
+                "#trend-period"
+            )
+            .innerHTML =
+            `
+            🆕 Primer mes registrado
+            `;
+
+            document
+            .querySelector(
+                "#trend-sales"
+            )
+            .innerHTML =
+            `
+            <span class="trend-up">
+            Primer registro
+            </span>
+            `;
+
+            document
+            .querySelector(
+                "#trend-expenses"
+            )
+            .innerHTML =
+            `
+            <span class="trend-neutral">
+            Sin comparación
+            </span>
+            `;
+
+            document
+            .querySelector(
+                "#trend-profit"
+            )
+            .innerHTML =
+            `
+            <span class="trend-up">
+            Construyendo historial
+            </span>
+            `;
+
+            document
+            .querySelector(
+                "#trend-status"
+            )
+            .textContent =
+            "✨ Nuevo";
+
+            document
+            .querySelector(
+                "#trend-status"
+            )
+            .className =
+            "badge trend-new-badge";
+
+
+        } else {
+
+            paintTrend(
+                "#trend-sales",
+                diff(
+                    currentSales,
+                    previousSales
+                )
+            );
+
+            paintTrend(
+                "#trend-expenses",
+                diff(
+                    currentExpenses,
+                    previousExpenses
+                )
+            );
+
+            paintTrend(
+                "#trend-profit",
+                diff(
+                    currentProfit,
+                    previousProfit
+                )
+            );
+
+        }
+
+
+        const score =
+        (
+            currentSales > previousSales
+            ?1: 0
+        )
+        +
+        (
+            currentProfit >
+            previousProfit
+            ?1: 0
+        )
+        +
+        (
+            currentExpenses <
+            previousExpenses
+            ?1: 0
+        );
+
+
+        document
+        .querySelector(
+            "#trend-status"
+        )
+        .textContent =
+        score >= 2
+        ?
+        "🟢 Mejor":
+        "🟡 Similar";
+
+
+        document
+        .querySelector(
+            "#trend-period"
+        )
+        .textContent =
+        `vs ${formatMonthYear(
+            previousMonth
+        )}`;
+
+
+        document
+        .querySelector(
+            "#dashboard-trend-section"
+        )
+        .classList
+        .remove(
+            "hidden"
+        );
+
+    }
+
+    // Helpers Vs Tendencias Anteriores
+    function paintTrend(
+        selector,
+        value
+    ) {
+
+        const el =
+        document
+        .querySelector(
+            selector
+        );
+
+        if (!el) return;
+
+        const sign =
+        value > 0
+        ?
+        "+":
+        "";
+
+
+        el.textContent =
+        `${sign}${value.toFixed(0)}%`;
+
+
+        el.className =
+        value > 0
+        ?
+        "trend-up":
+        value < 0
+        ?
+        "trend-down":
+        "trend-neutral";
+
+    }
+
+    // Función Formato Meses
+    function formatMonthYear(monthString) {
+
+        if (!monthString) {
+
+            return "Mes anterior";
+
+        }
+
+        const [
+            year,
+            month
+        ] =
+        monthString
+        .split("-");
+
+
+        const months = [
+            "Enero",
+            "Febrero",
+            "Marzo",
+            "Abril",
+            "Mayo",
+            "Junio",
+            "Julio",
+            "Agosto",
+            "Septiembre",
+            "Octubre",
+            "Noviembre",
+            "Diciembre"
+        ];
+
+        return `${months[
+            Number(month)-1
+        ]} ${year}`;
+
     }
 
     // Actualizaciones Salud Negocio
@@ -3862,21 +4775,92 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Metas del Mes
+    function getGoalStatus(current, goal, type = "daily") {
+        const safeCurrent = Number(current) || 0;
+        const safeGoal = Number(goal) || 0;
+
+        if (safeGoal <= 0) {
+            return {
+                text: "Meta no configurada",
+                className: "goal-status-neutral"
+            };
+        }
+
+        const percent = (safeCurrent / safeGoal) * 100;
+        const missing = Math.max(safeGoal - safeCurrent, 0);
+        const extra = Math.max(safeCurrent - safeGoal, 0);
+
+        if (percent >= 100) {
+            return {
+                text: `🎉 Objetivo superado por ${formatCurrency(extra)}`,
+                className: "goal-status-success"
+            };
+        }
+
+        if (percent >= 75) {
+            return {
+                text: `🟢 Muy cerca · faltan ${formatCurrency(missing)}`,
+                className: "goal-status-success"
+            };
+        }
+
+        if (percent >= 40) {
+            return {
+                text: `🟡 En ritmo · faltan ${formatCurrency(missing)}`,
+                className: "goal-status-warning"
+            };
+        }
+
+        if (percent > 0) {
+            return {
+                text: `🟠 Avance inicial · faltan ${formatCurrency(missing)}`,
+                className: "goal-status-warning"
+            };
+        }
+
+        return {
+            text: type === "daily"
+            ? `🔴 Sin avance hoy · faltan ${formatCurrency(missing)}`: `🔴 Sin avance mensual · faltan ${formatCurrency(missing)}`,
+            className: "goal-status-danger"
+        };
+    }
+
     function updateGoalsCard( {
         salesToday = 0,
-        monthProfit = 0
+        monthProfit = 0,
+        dailyGoal = DAILY_SALES_GOAL,
+        monthlyGoal = MONTHLY_PROFIT_GOAL
     }) {
-        const todayPercent = Math.min((salesToday / DAILY_SALES_GOAL) * 100, 100);
-        const monthPercent = Math.min((monthProfit / MONTHLY_PROFIT_GOAL) * 100, 100);
+        const todayPercent = dailyGoal > 0
+        ? Math.min((salesToday / dailyGoal) * 100, 100): 0;
+
+        const monthPercent = monthlyGoal > 0
+        ? Math.min((monthProfit / monthlyGoal) * 100, 100): 0;
 
         document.querySelector("#goal-today-text").textContent =
-        `${formatCurrency(salesToday)} / ${formatCurrency(DAILY_SALES_GOAL)}`;
+        `${formatCurrency(salesToday)} / ${formatCurrency(dailyGoal)}`;
 
         document.querySelector("#goal-month-text").textContent =
-        `${formatCurrency(monthProfit)} / ${formatCurrency(MONTHLY_PROFIT_GOAL)}`;
+        `${formatCurrency(monthProfit)} / ${formatCurrency(monthlyGoal)}`;
 
         document.querySelector("#goal-today-fill").style.width = `${todayPercent}%`;
         document.querySelector("#goal-month-fill").style.width = `${monthPercent}%`;
+
+        const todayStatus = getGoalStatus(salesToday, dailyGoal, "daily");
+        const monthStatus = getGoalStatus(monthProfit, monthlyGoal, "monthly");
+
+        const todayStatusEl = document.querySelector("#goal-today-status");
+        const monthStatusEl = document.querySelector("#goal-month-status");
+
+        if (todayStatusEl) {
+            todayStatusEl.textContent = todayStatus.text;
+            todayStatusEl.className = `goal-status-text ${todayStatus.className}`;
+        }
+
+        if (monthStatusEl) {
+            monthStatusEl.textContent = monthStatus.text;
+            monthStatusEl.className = `goal-status-text ${monthStatus.className}`;
+        }
     }
 
     // Hora y Temperatura Actual Dashboard
