@@ -2455,3 +2455,999 @@ opacity .25s,
 transform .25s;
 
 }
+
+/* ====================
+   Botón Editar Metas  
+   =================== */
+   
+.goals-edit-btn {
+    min-height: auto;
+
+    padding: 8px 12px;
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 950;
+
+    color: #065f46;
+    background: #d1fae5;
+    border: 1px solid #6ee7b7;
+}
+
+.goals-edit-btn:active {
+    transform: scale(0.96);
+}
+
+.goals-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 18px;
+
+    background: rgba(2, 6, 23, 0.62);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.goals-modal-card {
+    width: 100%;
+    max-width: 420px;
+
+    padding: 20px;
+    border-radius: 30px;
+
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(255,255,255,0.65);
+
+    box-shadow: 0 24px 70px rgba(15,23,42,0.28);
+}
+
+.goals-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 18px;
+}
+
+.goals-modal-header p {
+    font-size: 13px;
+    font-weight: 800;
+    color: #64748b;
+}
+
+.goals-modal-header h2 {
+    margin-top: 2px;
+
+    font-size: 26px;
+    line-height: 1;
+    font-weight: 950;
+    color: #0f172a;
+}
+
+.goals-modal-header button {
+    width: 42px;
+    height: 42px;
+    min-height: 42px;
+
+    border-radius: 16px;
+
+    background: #f1f5f9;
+    color: #0f172a;
+
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.goals-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.goals-form label span {
+    display: block;
+    margin-bottom: 7px;
+
+    font-size: 13px;
+    font-weight: 850;
+    color: #475569;
+}
+
+.goals-form input,
+.goals-form select {
+    width: 100%;
+
+    padding: 14px 15px;
+
+    border-radius: 18px;
+    border: 1px solid #cbd5e1;
+
+    background: #f8fafc;
+    color: #0f172a;
+
+    font-size: 16px;
+    font-weight: 850;
+}
+
+.goals-form button[type="submit"] {
+    margin-top: 4px;
+
+    min-height: 52px;
+
+    border-radius: 20px;
+
+    background: linear-gradient(135deg, #0ea5e9, #22c55e);
+    color: white;
+
+    font-size: 15px;
+    font-weight: 950;
+
+    box-shadow: 0 14px 30px rgba(14,165,233,0.24);
+}
+
+html.dark .goals-edit-btn {
+    color: #bbf7d0;
+    background: rgba(16,185,129,0.16);
+    border-color: rgba(52,211,153,0.25);
+}
+
+html.dark .goals-modal-card {
+    background: rgba(15,23,42,0.94);
+    border-color: rgba(51,65,85,0.9);
+}
+
+html.dark .goals-modal-header h2,
+html.dark .goals-modal-header button,
+html.dark .goals-form input,
+html.dark .goals-form select {
+    color: #f8fafc;
+}
+
+html.dark .goals-modal-header p,
+html.dark .goals-form label span {
+    color: #94a3b8;
+}
+
+html.dark .goals-modal-header button,
+html.dark .goals-form input,
+html.dark .goals-form select {
+    background: rgba(30,41,59,0.95);
+    border-color: rgba(51,65,85,0.9);
+}
+
+/* =========================
+   SMART GOALS STATUS
+========================= */
+
+.goal-status-text {
+    margin-top: 8px;
+
+    padding: 8px 10px;
+    border-radius: 14px;
+
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.25;
+
+    width: fit-content;
+    max-width: 100%;
+}
+
+.goal-status-success {
+    background: rgba(34, 197, 94, 0.14);
+    color: #166534;
+    border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.goal-status-warning {
+    background: rgba(245, 158, 11, 0.14);
+    color: #92400e;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.goal-status-danger {
+    background: rgba(239, 68, 68, 0.14);
+    color: #991b1b;
+    border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+.goal-status-neutral {
+    background: rgba(100, 116, 139, 0.14);
+    color: #475569;
+    border: 1px solid rgba(100, 116, 139, 0.28);
+}
+
+html.dark .goal-status-success {
+    color: #bbf7d0;
+    background: rgba(34, 197, 94, 0.14);
+}
+
+html.dark .goal-status-warning {
+    color: #fde68a;
+    background: rgba(245, 158, 11, 0.14);
+}
+
+html.dark .goal-status-danger {
+    color: #fecaca;
+    background: rgba(239, 68, 68, 0.14);
+}
+
+html.dark .goal-status-neutral {
+    color: #cbd5e1;
+    background: rgba(100, 116, 139, 0.18);
+}
+
+.trend-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+padding:14px;
+
+border-radius:18px;
+
+background:
+rgba(255,255,255,.05);
+}
+
+.trend-up{
+color:#22c55e;
+font-weight:800;
+}
+
+.trend-down{
+color:#ef4444;
+font-weight:800;
+}
+
+.trend-neutral{
+color:#94a3b8;
+font-weight:800;
+}
+
+.trend-new-badge {
+    background: rgba(14, 165, 233, 0.16) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+/* =========================
+   PEDIDOS - HERO PREMIUM
+========================= */
+
+.orders-hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.orders-hero::after {
+    content: "";
+    position: absolute;
+    right: -65px;
+    top: -65px;
+
+    width: 180px;
+    height: 180px;
+    border-radius: 999px;
+
+    background: linear-gradient(135deg, #0ea5e9, #22c55e);
+    opacity: 0.12;
+}
+
+.orders-hero-top {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 14px;
+}
+
+.orders-eyebrow {
+    font-size: 14px;
+    font-weight: 800;
+    color: #64748b !important;
+}
+
+.orders-hero h1 {
+    margin-top: 4px;
+
+    font-size: clamp(2.2rem, 10vw, 3.3rem);
+    line-height: 0.95;
+    font-weight: 950;
+    letter-spacing: -0.055em;
+
+    color: #0f172a !important;
+}
+
+.orders-subtitle {
+    margin-top: 12px;
+
+    font-size: 15px;
+    font-weight: 750;
+    line-height: 1.45;
+
+    color: #64748b !important;
+}
+
+.orders-hero-icon {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,0.78);
+    border: 1px solid rgba(255,255,255,0.65);
+
+    box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+}
+
+.orders-hero-icon img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+}
+
+.orders-actions-grid {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+
+    margin-top: 22px;
+}
+
+.orders-primary-btn,
+.orders-secondary-btn {
+    width: 100%;
+    min-height: 54px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    border-radius: 22px;
+
+    font-size: 15px;
+    font-weight: 950;
+}
+
+.orders-primary-btn {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: white;
+    box-shadow: 0 14px 32px rgba(14,165,233,0.24);
+}
+
+.orders-primary-btn span {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.orders-secondary-btn {
+    background: rgba(255,255,255,0.72);
+    color: #0f172a;
+    border: 1px solid rgba(148,163,184,0.28);
+}
+
+.orders-secondary-btn img {
+    width: 25px;
+    height: 25px;
+}
+
+.orders-primary-btn:active,
+.orders-secondary-btn:active {
+    transform: scale(0.97);
+}
+
+/* =========================
+   PEDIDOS - KPI PREMIUM
+========================= */
+
+.orders-kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+
+.orders-kpi-card {
+    position: relative;
+    overflow: hidden;
+
+    min-height: 124px;
+    padding: 18px;
+
+    border-radius: 28px;
+
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(255,255,255,0.55);
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+
+    box-shadow: 0 14px 36px rgba(15,23,42,0.10);
+}
+
+.orders-kpi-card::after {
+    content: "";
+    position: absolute;
+    right: -38px;
+    bottom: -46px;
+
+    width: 120px;
+    height: 120px;
+    border-radius: 999px;
+
+    background: linear-gradient(135deg, #0ea5e9, #22c55e);
+    opacity: 0.12;
+}
+
+.orders-kpi-icon {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 18px;
+    font-size: 22px;
+
+    background: rgba(255,255,255,0.72);
+}
+
+.orders-kpi-card p {
+    margin-top: 12px;
+
+    font-size: 13px;
+    font-weight: 850;
+
+    color: #64748b !important;
+}
+
+.orders-kpi-card h2 {
+    margin-top: 4px;
+
+    font-size: clamp(1.8rem, 8vw, 2.5rem);
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -0.04em;
+
+    color: #0f172a !important;
+}
+
+.orders-kpi-orders {
+    background: #e0f2fe;
+}
+
+.orders-kpi-sales {
+    background: #dcfce7;
+}
+
+.orders-kpi-profit {
+    background: #ede9fe;
+}
+
+/* Responsive */
+@media (min-width: 430px) {
+    .orders-kpi-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Oscuro */
+html.dark .orders-hero h1,
+html.dark .orders-kpi-card h2,
+html.dark .orders-secondary-btn {
+    color: #f8fafc !important;
+}
+
+html.dark .orders-eyebrow,
+html.dark .orders-subtitle,
+html.dark .orders-kpi-card p {
+    color: #94a3b8 !important;
+}
+
+html.dark .orders-hero-icon,
+html.dark .orders-secondary-btn,
+html.dark .orders-kpi-card {
+    background: rgba(15,23,42,0.88);
+    border-color: rgba(51,65,85,0.8);
+}
+
+html.dark .orders-kpi-icon {
+    background: rgba(30,41,59,0.9);
+}
+
+/* =========================
+   PEDIDOS - LISTA MOBILE PREMIUM
+========================= */
+
+.orders-list-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.orders-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.order-mobile-card {
+    padding: 16px;
+    border-radius: 26px;
+
+    background: rgba(255,255,255,0.70);
+    border: 1px solid rgba(255,255,255,0.55);
+
+    box-shadow: 0 12px 28px rgba(15,23,42,0.08);
+}
+
+.order-mobile-header {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+}
+
+.order-mobile-icon {
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 18px;
+    background: #e0f2fe;
+
+    font-size: 22px;
+}
+
+.order-mobile-eyebrow {
+    font-size: 11px;
+    font-weight: 900;
+    color: #0ea5e9 !important;
+}
+
+.order-mobile-card h3 {
+    margin-top: 2px;
+
+    font-size: 17px;
+    line-height: 1.1;
+    font-weight: 950;
+
+    color: #0f172a !important;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.order-mobile-date {
+    margin-top: 4px;
+
+    font-size: 12px;
+    font-weight: 750;
+    color: #64748b !important;
+}
+
+.order-mobile-products {
+    margin-top: 14px;
+
+    padding: 12px;
+    border-radius: 18px;
+
+    background: rgba(241,245,249,0.9);
+
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.4;
+
+    color: #475569;
+}
+
+.order-mobile-totals {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+
+    margin-top: 12px;
+}
+
+.order-mobile-totals div {
+    padding: 10px;
+    border-radius: 18px;
+
+    background: rgba(255,255,255,0.76);
+    border: 1px solid rgba(226,232,240,0.8);
+}
+
+.order-mobile-totals span {
+    display: block;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    color: #64748b;
+}
+
+.order-mobile-totals strong {
+    display: block;
+    margin-top: 3px;
+
+    font-size: 13px;
+    font-weight: 950;
+
+    color: #0f172a;
+}
+
+.orders-empty-state {
+    text-align: center;
+    padding: 30px 16px;
+
+    border-radius: 24px;
+
+    background: rgba(255,255,255,0.65);
+    border: 1px dashed rgba(148,163,184,0.45);
+}
+
+.orders-empty-state div {
+    font-size: 34px;
+    margin-bottom: 8px;
+}
+
+.orders-empty-state p {
+    font-size: 15px;
+    font-weight: 900;
+    color: #0f172a !important;
+}
+
+.orders-empty-state span {
+    display: block;
+    margin-top: 4px;
+
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+/* Tabla solo escritorio */
+.orders-desktop-table {
+    display: none;
+}
+
+@media (min-width: 780px) {
+    .orders-mobile-list {
+        display: none;
+    }
+
+    .orders-desktop-table {
+        display: block;
+    }
+}
+
+/* Dark mode */
+html.dark .order-mobile-card {
+    background: rgba(15,23,42,0.72);
+    border-color: rgba(51,65,85,0.75);
+}
+
+html.dark .order-mobile-card h3,
+html.dark .order-mobile-totals strong,
+html.dark .orders-empty-state p {
+    color: #f8fafc !important;
+}
+
+html.dark .order-mobile-date,
+html.dark .order-mobile-totals span,
+html.dark .orders-empty-state span {
+    color: #94a3b8 !important;
+}
+
+html.dark .order-mobile-products,
+html.dark .order-mobile-totals div,
+html.dark .orders-empty-state {
+    background: rgba(30,41,59,0.72);
+    border-color: rgba(51,65,85,0.75);
+}
+
+html.dark .order-mobile-products {
+    color: #cbd5e1;
+}
+
+html.dark .order-mobile-icon {
+    background: rgba(14,165,233,0.16);
+}
+
+/* =========================
+   PEDIDOS - ACORDEÓN
+========================= */
+
+.order-accordion-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.order-accordion-toggle {
+    width: 100%;
+    padding: 16px;
+    text-align: left;
+}
+
+.order-accordion-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.order-accordion-right strong {
+    font-size: 15px;
+    font-weight: 950;
+    color: #0f172a;
+}
+
+.order-chevron {
+    font-size: 12px;
+    font-weight: 900;
+    color: #64748b;
+    transition: transform 0.25s ease;
+}
+
+.order-accordion-card.is-open .order-chevron {
+    transform: rotate(180deg);
+}
+
+.order-accordion-detail {
+    padding: 0 16px 16px;
+    animation: orderDetailFade 0.22s ease;
+}
+
+.order-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+
+    margin-top: 12px;
+}
+
+.order-detail-grid div {
+    padding: 12px;
+    border-radius: 18px;
+
+    background: rgba(241,245,249,0.82);
+    border: 1px solid rgba(226,232,240,0.8);
+}
+
+.order-detail-grid span {
+    display: block;
+    font-size: 10px;
+    font-weight: 850;
+    color: #64748b;
+}
+
+.order-detail-grid strong {
+    display: block;
+    margin-top: 3px;
+
+    font-size: 13px;
+    font-weight: 950;
+    color: #0f172a;
+}
+
+@keyframes orderDetailFade {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+html.dark .order-accordion-right strong,
+html.dark .order-detail-grid strong {
+    color: #f8fafc;
+}
+
+html.dark .order-detail-grid div {
+    background: rgba(30,41,59,0.72);
+    border-color: rgba(51,65,85,0.75);
+}
+
+html.dark .order-detail-grid span {
+    color: #94a3b8;
+}
+
+/* =========================
+   PRODUCT CHIPS
+========================= */
+
+.order-mobile-products {
+
+display: flex;
+
+flex-wrap: wrap;
+
+gap: 10px;
+
+padding: 14px;
+
+border-radius: 22px;
+
+background:
+rgba(241,245,249,.85);
+}
+
+.product-chip {
+
+display: flex;
+
+align-items: center;
+
+gap: 8px;
+
+padding:
+10px 14px;
+
+border-radius: 999px;
+
+background:
+rgba(255,255,255,.85);
+
+border:
+1px solid
+rgba(226,232,240,.8);
+
+max-width: 100%;
+}
+
+.product-chip-icon {
+
+font-size: 18px;
+
+flex-shrink: 0;
+}
+
+.product-chip-text {
+
+font-size: 13px;
+
+font-weight: 850;
+
+color:
+#0f172a;
+
+overflow: hidden;
+
+white-space: nowrap;
+
+text-overflow: ellipsis;
+}
+
+.product-chip-qty {
+
+padding:
+4px 10px;
+
+border-radius:
+999px;
+
+background:
+rgba(14,165,233,.12);
+
+font-size:
+11px;
+
+font-weight:
+900;
+
+color:
+#0284c7;
+}
+
+.product-chip-empty {
+
+width: 100%;
+
+text-align: center;
+
+font-size: 13px;
+
+font-weight: 700;
+
+color:
+#64748b;
+}
+
+/* DARK */
+
+html.dark .order-mobile-products {
+
+background:
+rgba(30,41,59,.72);
+}
+
+html.dark .product-chip {
+
+background:
+rgba(15,23,42,.72);
+
+border-color:
+rgba(51,65,85,.8);
+}
+
+html.dark .product-chip-text {
+
+color:
+#f8fafc;
+}
+
+/* =========================
+   ORDER PROGRESS
+========================= */
+
+.order-progress {
+    width: 82px;
+    height: 7px;
+
+    overflow: hidden;
+
+    border-radius: 999px;
+
+    background: rgba(148, 163, 184, 0.25);
+}
+
+.order-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.order-progress-warning {
+    background: linear-gradient(90deg, #f59e0b, #facc15);
+}
+
+.order-progress-info {
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+}
+
+.order-progress-success {
+    background: linear-gradient(90deg, #10b981, #22c55e);
+}
+
+.order-progress-danger {
+    background: linear-gradient(90deg, #ef4444, #f97316);
+}
+
+.order-progress-text{
+
+margin-top:8px;
+
+font-size:.72rem;
+
+font-weight:600;
+
+opacity:.75;
+
+text-align:right;
+
+}
