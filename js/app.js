@@ -2172,6 +2172,66 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         </div>
         </section>
+        <div
+        id="order-actions-sheet"
+        class="order-sheet hidden"
+        >
+
+        <div class="order-sheet-backdrop"></div>
+
+        <div class="order-sheet-content">
+
+        <div class="order-sheet-handle"></div>
+
+        <div class="order-sheet-header">
+
+        <div>
+
+        <p class="sheet-label">
+        Pedido seleccionado
+        </p>
+
+        <h2
+        id="sheet-order-client"
+        class="sheet-title"
+        >
+        —
+        </h2>
+
+        <p
+        id="sheet-order-summary"
+        class="sheet-subtitle"
+        >
+        —
+        </p>
+
+        </div>
+
+        </div>
+
+        <button id="sheet-edit" class="order-sheet-action action-edit">
+        ✏️ Editar pedido
+        </button>
+
+        <button id="sheet-whatsapp" class="order-sheet-action action-whatsapp">
+        📲 Compartir WhatsApp
+        </button>
+
+        <button id="sheet-pdf" class="order-sheet-action action-pdf">
+        🧾 Generar PDF
+        </button>
+
+        <button id="sheet-status" class="order-sheet-action action-status">
+        🔁 Cambiar estatus
+        </button>
+
+        <button id="sheet-cancel" class="order-sheet-action action-cancel">
+        ❌ Cancelar pedido
+        </button>
+
+        </div>
+
+        </div>
         `;
 
         bindBottomNav(profile,
@@ -2186,6 +2246,30 @@ document.addEventListener("DOMContentLoaded", async () => {
             async () => {
                 await downloadOrdersPDF(profile, activeBusiness);
             });
+
+        document.querySelector("#sheet-edit")?.addEventListener("click", () => {
+            console.log("Editar pedido:", selectedOrder);
+        });
+
+        document.querySelector("#sheet-whatsapp")?.addEventListener("click", () => {
+            closeOrderSheet();
+            shareOrderWhatsapp(selectedOrder);
+        });
+
+        document.querySelector("#sheet-pdf")?.addEventListener("click", () => {
+            closeOrderSheet();
+            downloadSingleOrderPDF(selectedOrder);
+        });
+
+        document.querySelector("#sheet-status")?.addEventListener("click", () => {
+            closeOrderSheet();
+            openOrderStatusModal(selectedOrder, activeBusiness?.businesses?.id);
+        });
+
+        document.querySelector("#sheet-cancel")?.addEventListener("click", () => {
+            closeOrderSheet();
+            cancelOrder(selectedOrder, activeBusiness?.businesses?.id);
+        });
 
         await loadOrders(activeBusiness?.businesses?.id);
     }
@@ -2221,7 +2305,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             total_profit,
             created_at,
             clients (
-            name
+            name,
+            whatsapp,
+            address
             ),
             profiles (
             full_name
@@ -2370,7 +2456,27 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const orderNumber = String(order.order_number || 0).padStart(4, "0");
 
                 return `
-                <article class="order-mobile-card order-accordion-card">
+                <article
+                class="
+                order-mobile-card
+                order-accordion-card
+                "
+
+                data-order-id="${order.id}"
+
+                data-client="${order.clients?.name}"
+
+                data-number="${order.order_number}"
+
+                data-total="${formatCurrency(order.total_sale)}"
+
+                data-status="${getOrderStatusLabel(order.status)}"
+
+                data-status-raw="${order.status || "pendiente"}"
+
+                data-whatsapp="${order.clients?.whatsapp || ""}"
+                data-address="${order.clients?.address || ""}"
+                >
 
                 <button
                 type="button"
@@ -2379,7 +2485,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 >
 
                 <div class="order-mobile-header">
-                <div class="order-mobile-icon">📦</div>
+                <div class="order-mobile-icon"><div class="client-avatar">
+
+                ${getClientInitials(
+                    order.clients?.name
+                )}
+
+                </div></div>
 
                 <div class="min-w-0">
                 <p class="order-mobile-eyebrow">
@@ -2465,6 +2577,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 `;
             }).join("");
 
+            enableOrderActions();
+
             document.querySelectorAll(".order-accordion-toggle").forEach(button => {
                 button.addEventListener("click", () => {
                     const orderId = button.dataset.orderId;
@@ -2476,6 +2590,436 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
             });
         }
+    }
+
+    // Cancelar Pedidos
+    async function cancelOrder(orderId, businessId) {
+
+        const card =
+        document.querySelector(
+            `[data-order-id="${orderId}"]`
+        );
+
+        if (!card) {
+
+            showToast(
+                "No se encontró el pedido.",
+                "error"
+            );
+
+            return;
+
+        }
+
+        const client =
+        card.dataset.client ||
+        "Cliente";
+
+        const number =
+        String(
+            card.dataset.number ||
+            ""
+        )
+        .padStart(
+            4,
+            "0"
+        );
+
+        const modal =
+        document.createElement(
+            "div"
+        );
+
+        modal.className =
+        "cancel-order-backdrop";
+
+        modal.innerHTML =
+        `
+        <div class="cancel-order-modal">
+
+        <div class="cancel-order-icon">
+        ❌
+        </div>
+
+        <h2>
+        Cancelar pedido
+        </h2>
+
+        <p>
+        Pedido #${number}
+        <br>
+        ${client}
+        </p>
+
+        <div class="cancel-order-buttons">
+
+        <button
+        class="
+        cancel-order-close
+        "
+        >
+
+        Volver
+
+        </button>
+
+        <button
+        class="
+        cancel-order-confirm
+        "
+        >
+
+        Confirmar
+
+        </button>
+
+        </div>
+
+        </div>
+        `;
+
+        document.body.appendChild(
+            modal
+        );
+
+        modal
+        .querySelector(
+            ".cancel-order-close"
+        )
+        .onclick =
+        ()=> {
+
+            modal.remove();
+
+        };
+
+        modal
+        .querySelector(
+            ".cancel-order-confirm"
+        )
+        .onclick =
+        async()=> {
+
+            try {
+
+                const {
+                    error
+                } =
+                await supabaseClient
+                .from(
+                    "orders"
+                )
+                .update({
+
+                    status:
+                    "cancelado"
+
+                })
+                .eq(
+                    "id",
+                    orderId
+                );
+
+                if (error)
+                    throw error;
+
+                modal.remove();
+
+                showToast(
+                    "Pedido cancelado.",
+                    "success"
+                );
+
+                if (
+                    businessId
+                ) {
+
+                    await loadOrders(
+                        businessId
+                    );
+
+                }
+
+            }catch(
+                error
+            ) {
+
+                console.error(
+                    error
+                );
+
+                showToast(
+                    "No se pudo cancelar.",
+                    "error"
+                );
+
+            }
+
+        };
+
+    }
+
+    //Cambiar Status Pedidos
+    function openOrderStatusModal(orderId, businessId) {
+        const card = document.querySelector(`[data-order-id="${orderId}"]`);
+
+        if (!card) {
+            showToast("No se encontró el pedido.", "error");
+            return;
+        }
+
+        const currentStatus = card.dataset.statusRaw || "pendiente";
+        const client = card.dataset.client || "Cliente";
+        const number = String(card.dataset.number || "").padStart(4, "0");
+
+        const modal = document.createElement("div");
+        modal.className = "order-status-modal-backdrop";
+
+        modal.innerHTML = `
+        <div class="order-status-modal">
+
+        <div class="order-status-modal-header">
+        <div>
+        <p>Pedido #${number}</p>
+        <h2>${client}</h2>
+        </div>
+
+        <button type="button" id="close-order-status-modal">
+        ×
+        </button>
+        </div>
+
+        <div class="order-status-options">
+
+        ${[
+            ["pendiente",
+                "🟡",
+                "Pendiente"],
+            ["en_proceso",
+                "🔵",
+                "En proceso"],
+            ["entregado",
+                "🟢",
+                "Entregado"],
+            ["pagado",
+                "✅",
+                "Pagado"],
+            ["cancelado",
+                "🔴",
+                "Cancelado"]
+        ].map(([value, icon, label]) => `
+            <button
+            type="button"
+            class="order-status-option ${currentStatus === value ? "is-active": ""}"
+            data-status="${value}"
+            >
+            <span>${icon}</span>
+            ${label}
+            </button>
+            `).join("")}
+
+        </div>
+
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector("#close-order-status-modal")?.addEventListener("click", () => {
+            modal.remove();
+        });
+
+        modal.addEventListener("click", (event) => {
+            if (event.target === modal) {
+                modal.remove();
+            }
+        });
+
+        modal.querySelectorAll(".order-status-option").forEach(button => {
+            button.addEventListener("click", async () => {
+                const newStatus = button.dataset.status;
+
+                try {
+                    const {
+                        error
+                    } = await supabaseClient
+                    .from("orders")
+                    .update({
+                        status: newStatus
+                    })
+                    .eq("id", orderId);
+
+                    if (error) throw error;
+
+                    showToast("Estatus actualizado.", "success");
+                    modal.remove();
+
+                    if (businessId) {
+                        await loadOrders(businessId);
+                    } else {
+                        await loadDashboard();
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    showToast(error.message || "No se pudo actualizar el estatus.", "error");
+                }
+            });
+        });
+    }
+
+    // Acciones Pedidos
+    // ======================
+    // Acciones rápidas pedidos
+    // ======================
+
+    let selectedOrder = null;
+
+    function enableOrderActions() {
+
+        document
+        .querySelectorAll(
+            ".order-accordion-card"
+        )
+        .forEach(card => {
+
+            let timer;
+
+            card.addEventListener(
+                "touchstart",
+                ()=> {
+
+                    timer =
+                    setTimeout(()=> {
+
+                        selectedOrder =
+                        card.dataset.orderId;
+
+                        openOrderSheet();
+
+                    }, 500);
+
+                });
+
+            card.addEventListener(
+                "touchend",
+                ()=> {
+
+                    clearTimeout(
+                        timer
+                    );
+
+                });
+
+        });
+
+    }
+
+    function openOrderSheet() {
+
+        const card =
+        document.querySelector(
+            `[data-order-id="${selectedOrder}"]`
+        );
+
+        if (card) {
+
+            document
+            .querySelector(
+                "#sheet-order-client"
+            )
+            .textContent =
+            card.dataset.client;
+
+            document
+            .querySelector(
+                "#sheet-order-summary"
+            )
+            .textContent =
+            `
+            Pedido #${card.dataset.number}
+            •
+            ${card.dataset.total}
+            •
+            ${card.dataset.status}
+            `;
+
+        }
+
+        document
+        .querySelector(
+            "#order-actions-sheet"
+        )
+        .classList
+        .remove(
+            "hidden"
+        );
+
+    }
+
+    function closeOrderSheet() {
+
+        document
+        .querySelector(
+            "#order-actions-sheet"
+        )
+        ?.classList
+        .add(
+            "hidden"
+        );
+
+    }
+
+    document
+    .addEventListener(
+        "click",
+        (event)=> {
+
+            if (
+                event.target
+                .classList
+                .contains(
+                    "order-sheet-backdrop"
+                )
+            ) {
+
+                closeOrderSheet();
+
+            }
+
+        });
+
+    // Compartir Pedido WhatsApp
+    function shareOrderWhatsapp(orderId) {
+        const card = document.querySelector(`[data-order-id="${orderId}"]`);
+
+        if (!card) {
+            showToast("No se encontró el pedido.", "error");
+            return;
+        }
+
+        const client = card.dataset.client || "Cliente";
+        const number = String(card.dataset.number || "").padStart(4, "0");
+        const total = card.dataset.total || "$0.00";
+        const status = card.dataset.status || "Pendiente";
+        const whatsapp = card.dataset.whatsapp || "";
+
+        const message = `
+        Hola ${client}, tu pedido #${number} fue registrado correctamente.
+
+        Total: ${total}
+        Estatus: ${status}
+
+        Gracias por tu compra.
+        AquaControl
+        `.trim();
+
+        const cleanPhone = whatsapp.replace(/\D/g, "");
+
+        const url = cleanPhone
+        ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(message)}`: `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+        window.open(url, "_blank");
     }
 
     // Barra Progreso Estatus Pedidos
@@ -4625,6 +5169,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
+    // Función Iniciales Avatar Cliente
+    function getClientInitials(name) {
+
+        if (!name) return "CL";
+
+        return name
+        .trim()
+        .split(" ")
+        .slice(0, 2)
+        .map(word => word[0])
+        .join("")
+        .toUpperCase();
+
+    }
+
     // Función Formato Meses
     function formatMonthYear(monthString) {
 
@@ -5596,7 +6155,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Añadir Logo al PDF
+    // Añadir Logo PDF
     async function loadImageAsBase64(url) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -6436,3 +6995,187 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
 });
+
+//PDF Individual Pedidos
+async function downloadSingleOrderPDF(orderId) {
+    if (!window.jspdf) {
+        showToast("jsPDF no está cargado.", "error");
+        return;
+    }
+
+    const {
+        jsPDF
+    } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "letter");
+
+    if (typeof doc.autoTable !== "function") {
+        showToast("autoTable no está cargado.", "error");
+        return;
+    }
+
+    const {
+        data: order,
+        error
+    } = await supabaseClient
+    .from("orders")
+    .select(`
+        id,
+        order_number,
+        status,
+        total_sale,
+        total_cost,
+        total_profit,
+        created_at,
+        clients (
+        name,
+        whatsapp,
+        address
+        ),
+        profiles (
+        full_name
+        ),
+        order_items (
+        product_name,
+        quantity,
+        sale_price,
+        cost_price
+        )
+        `)
+    .eq("id", orderId)
+    .maybeSingle();
+
+    if (error || !order) {
+        console.error(error);
+        showToast("No se pudo cargar el pedido.", "error");
+        return;
+    }
+
+    let logoBase64 = null;
+
+    try {
+            logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
+        } catch (error) {
+            console.warn("No se pudo cargar el logo para el PDF:", error);
+
+        showToast(
+            "Logo no encontrado",
+            "warning"
+        );
+
+    }
+
+    doc.setFillColor(14, 165, 233);
+    doc.rect(0, 0, 216, 38, "F");
+
+    if (logoBase64) {
+        doc.addImage(logoBase64, "PNG", 16, 8, 18, 18);
+    }
+
+    const titleX = logoBase64 ? 40: 16;
+
+    const statusLabels = {
+        pendiente: "Pendiente",
+        en_proceso: "En proceso",
+        entregado: "Entregado",
+        pagado: "Pagado",
+        cancelado: "Cancelado"
+    };
+
+    const statusLabel =
+    statusLabels[
+        order.status
+    ] || order.status || "—";
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("AquaControl", titleX, 16);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Comprobante de pedido", titleX, 23);
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text(`Pedido #${String(order.order_number || 0).padStart(4, "0")}`, 16, 50);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Cliente: ${order.clients?.name || "Sin cliente"}`, 16, 60);
+    doc.text(`WhatsApp: ${order.clients?.whatsapp || "—"}`, 16, 66);
+    doc.text(`Domicilio: ${order.clients?.address || "—"}`, 16, 72);
+    doc.text(`Vendedor: ${order.profiles?.full_name || "—"}`, 16, 78);
+    doc.text(`Fecha: ${formatDate(order.created_at)}`, 16, 84);
+    doc.text(
+        `Estatus: ${statusLabel}`,
+        16,
+        90
+    );
+
+    const rows = (order.order_items || []).map(item => {
+        const quantity = Number(item.quantity || 0);
+        const salePrice = Number(item.sale_price || 0);
+        const subtotalSale = quantity * salePrice;
+
+        return [
+            item.product_name || "Producto",
+            quantity,
+            formatCurrency(salePrice),
+            formatCurrency(subtotalSale),
+        ];
+    });
+
+    doc.autoTable({
+        startY: 100,
+        head: [["Producto", "Cantidad", "Precio", "Subtotal"]],
+        body: rows.length ? rows: [["Sin productos", "—", "—", "—"]],
+        theme: "grid",
+        headStyles: {
+            fillColor: [14, 165, 233],
+            textColor: 255,
+            fontStyle: "bold",
+        },
+        styles: {
+            fontSize: 9,
+            cellPadding: 3,
+        },
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Resumen", 16, finalY);
+
+    doc.autoTable({
+        startY: finalY + 5,
+        body: [
+            ["Venta total", formatCurrency(order.total_sale || 0)],
+            ["Costo total", formatCurrency(order.total_cost || 0)],
+            ["Ganancia", formatCurrency(order.total_profit || 0)],
+        ],
+        theme: "plain",
+        styles: {
+            fontSize: 11,
+            cellPadding: 3,
+        },
+        columnStyles: {
+            0: {
+                fontStyle: "bold"
+            },
+            1: {
+                halign: "right"
+            },
+        },
+    });
+
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text("Generado por AquaControl", 16, 270);
+
+    const fileName = `Pedido-AquaControl-${String(order.order_number || 0).padStart(4, "0")}.pdf`;
+
+    doc.save(fileName);
+    showToast("PDF del pedido generado.", "success");
+}
