@@ -1098,7 +1098,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
-    // Esditar Ventas mensuales
+    // Editar Ventas mensuales
     async function openGoalsModal(businessId) {
         if (!businessId) {
             showToast("No se encontró negocio activo.", "error");
@@ -1298,6 +1298,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         >
         + Agregar producto
         </button>
+
+        <button
+        id="btn-history"
+        class="w-full bg-white/80 dark:bg-slate-900 border border-sky-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl py-3 font-semibold flex items-center justify-center gap-2"
+        >
+
+        <img
+        src="./assets/icons/archivo.svg"
+        class="w-6 h-6"
+        alt="Historial"
+        >
+
+        Historial
+
+        </button>
+
         <button
         id="btn-products-pdf"
         class="w-full bg-white/80 dark:bg-slate-900 border border-sky-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl py-3 font-semibold flex items-center justify-center gap-2"
@@ -1328,6 +1344,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.querySelector("#btn-products-pdf")?.addEventListener("click",
             async () => {
                 await downloadProductsPDF(activeBusiness?.businesses?.id);
+            });
+
+        document
+        .querySelector(
+            "#btn-history"
+        )
+        ?.addEventListener(
+            "click",
+            ()=> {
+                renderInventoryHistoryView(
+                    profile,
+                    activeBusiness
+                );
             });
 
         await loadProducts(profile,
@@ -1438,12 +1467,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             </h2>
 
             <div class="grid grid-cols-2 gap-2">
-            <div class="rounded-2xl bg-white/70 white:bg-slate-900/50 p-2 border border-white/50 dark:border-slate-800">
+            <div class="rounded-2xl bg-white white:bg-slate-900/50 p-2 border border-white/50 dark:border-slate-800">
             <p class="text-[10px] text-slate-500 dark:text-slate-400">Compra</p>
             <p class="text-sm font-black">${formatCurrency(product.cost_price)}</p>
             </div>
 
-            <div class="rounded-2xl bg-white/70 white:bg-slate-900/50 p-2 border border-white/50 dark:border-slate-800">
+            <div class="rounded-2xl bg-white white:bg-slate-900/50 p-2 border border-white/50 dark:border-slate-800">
             <p class="text-[10px] text-slate-500 dark:text-slate-400">Venta</p>
             <p class="text-sm font-black">${formatCurrency(product.sale_price)}</p>
             </div>
@@ -1828,6 +1857,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const button = document.querySelector("#btn-save-product");
             const imageFile = document.querySelector("#product-image")?.files?.[0] || null;
 
+            let imageUrl = null;
+
             const payload = {
                 business_id: businessId,
                 brand: document.querySelector("#product-brand").value.trim(),
@@ -1858,11 +1889,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             try {
                 setButtonLoading(button, true, "Guardando...");
 
-                let imageUrl = null;
-
                 if (imageFile) {
                     setButtonLoading(button, true, "Subiendo imagen...");
                     imageUrl = await uploadProductImageToCloudinary(imageFile);
+                    payload.image_url = imageUrl;
                     setButtonLoading(button, true, "Guardando...");
                 }
 
@@ -2248,7 +2278,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
         document.querySelector("#sheet-edit")?.addEventListener("click", () => {
-            console.log("Editar pedido:", selectedOrder);
+            closeOrderSheet();
+            renderEditOrderForm(selectedOrder, profile, activeBusiness);
         });
 
         document.querySelector("#sheet-whatsapp")?.addEventListener("click", () => {
@@ -2701,6 +2732,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         async()=> {
 
             try {
+
+                await restoreInventoryFromCancelledOrder(orderId, businessId, profile);
 
                 const {
                     error
@@ -3287,6 +3320,670 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 await saveOrder(profile, activeBusiness);
             });
+    }
+
+    //Función Editar Pedido Modal
+    async function renderEditOrderForm(orderId, profile, activeBusiness) {
+        const app = document.querySelector("#app");
+        const businessId = activeBusiness?.businesses?.id;
+
+        if (!orderId || !businessId) {
+            showToast("No se encontró el pedido.", "error");
+            return;
+        }
+
+        const {
+            data: order,
+            error
+        } = await supabaseClient
+        .from("orders")
+        .select(`
+            id,
+            client_id,
+            status,
+            created_at,
+            order_number,
+            total_sale,
+            total_cost,
+            total_profit,
+            clients (
+            name,
+            whatsapp,
+            address
+            ),
+            order_items (
+            id,
+            product_id,
+            product_name,
+            quantity,
+            sale_price,
+            cost_price
+            )
+            `)
+        .eq("id", orderId)
+        .maybeSingle();
+
+        if (error || !order) {
+            console.error(error);
+            showToast("No se pudo cargar el pedido.", "error");
+            return;
+        }
+
+        const originalOrderItems = order.order_items || [];
+
+        app.innerHTML = `
+        <section class="has-bottom-nav min-h-screen bg-slate-100 bg-transparent px-4 py-6">
+        <div class="max-w-2xl mx-auto space-y-4">
+
+        <form id="edit-order-form" class="aqua-card p-5 space-y-4">
+
+        <div>
+        <button type="button" id="back-orders" class="text-sm text-sky-600 dark:text-sky-400 font-semibold mb-4">
+        ← Volver a pedidos
+        </button>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Editar pedido
+        </p>
+
+        <h1 class="text-2xl font-black">
+        Pedido #${String(order.order_number || 0).padStart(4, "0")}
+        </h1>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Actualiza cliente, fecha o estatus del pedido.
+        </p>
+        </div>
+
+        <label class="block">
+        <span class="form-label">Cliente</span>
+        <select
+        id="edit-order-client-select"
+        required
+        class="form-control"
+        >
+        <option value="">Cargando clientes...</option>
+        </select>
+        </label>
+
+        <div class="grid grid-cols-1 gap-3">
+        <div class="order-total-box">
+        <p>WhatsApp cliente</p>
+        <p id="edit-order-client-whatsapp-view">${order.clients?.whatsapp || "—"}</p>
+        </div>
+
+        <div class="order-total-box">
+        <p>Domicilio</p>
+        <p id="edit-order-client-address-view">${order.clients?.address || "—"}</p>
+        </div>
+        </div>
+
+        <label class="block">
+        <span class="form-label">Fecha y hora del pedido</span>
+        <input
+        id="edit-order-created-at"
+        type="datetime-local"
+        value="${toDateTimeLocalValue(order.created_at)}"
+        class="form-control"
+        />
+        </label>
+
+        <label class="block">
+        <span class="form-label">Status</span>
+        <select id="edit-order-status" class="form-control">
+        <option value="pendiente" ${order.status === "pendiente" ? "selected": ""}>Pendiente</option>
+        <option value="en_proceso" ${order.status === "en_proceso" ? "selected": ""}>En proceso</option>
+        <option value="entregado" ${order.status === "entregado" ? "selected": ""}>Entregado</option>
+        <option value="pagado" ${order.status === "pagado" ? "selected": ""}>Pagado</option>
+        <option value="cancelado" ${order.status === "cancelado" ? "selected": ""}>Cancelado</option>
+        </select>
+        </label>
+
+        <section class="edit-order-products-section">
+
+        <div class="flex items-center justify-between gap-3">
+        <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Productos
+        </p>
+
+        <h2 class="text-xl font-black">
+        Productos del pedido
+        </h2>
+        </div>
+        </div>
+
+        <div id="edit-order-items-container" class="space-y-3 mt-4"></div>
+
+        <button
+        id="btn-edit-add-product"
+        type="button"
+        class="w-full rounded-3xl border-2 border-dashed border-sky-400 bg-sky-50 dark:bg-slate-900 dark:border-sky-500 p-5 flex items-center justify-center gap-3 active:scale-[0.98]"
+        >
+        <span class="w-10 h-10 rounded-2xl bg-sky-500 text-white flex items-center justify-center text-2xl font-bold">
+        +
+        </span>
+
+        <div class="text-left">
+        <p class="text-lg font-bold text-slate-900 dark:text-white">
+        Agregar producto
+        </p>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Añade otro producto al pedido
+        </p>
+        </div>
+        </button>
+
+        </section>
+
+        <section class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="order-total-box">
+        <p>Venta total</p>
+        <p id="edit-order-total-sale">${formatCurrency(order.total_sale || 0)}</p>
+        </div>
+
+        <div class="order-total-box">
+        <p>Costo total</p>
+        <p id="edit-order-total-cost">${formatCurrency(order.total_cost || 0)}</p>
+        </div>
+
+        <div class="order-total-box">
+        <p>Ganancia</p>
+        <p id="edit-order-total-profit">${formatCurrency(order.total_profit || 0)}</p>
+        </div>
+        </section>
+
+        <button
+        id="btn-update-order"
+        type="submit"
+        class="w-full bg-sky-600 hover:bg-sky-500 text-white rounded-2xl py-3 font-semibold"
+        >
+        Guardar cambios
+        </button>
+
+        </form>
+
+        ${renderBottomNav("orders")}
+
+        </div>
+        </section>
+        `;
+
+        bindBottomNav(profile, activeBusiness);
+
+        document.querySelector("#back-orders")?.addEventListener("click", () => {
+            renderOrdersView(profile, activeBusiness);
+        });
+
+        await loadClientsForEditOrder(
+            businessId,
+            order.client_id,
+            order.clients
+        );
+
+        await renderEditOrderItems(
+            businessId,
+            order.order_items || []
+        );
+
+        document.querySelector("#btn-edit-add-product")?.addEventListener("click", async () => {
+            await addEditOrderItemRow(businessId);
+        });
+
+        document.querySelector("#edit-order-form")?.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const button = document.querySelector("#btn-update-order");
+
+            try {
+                setButtonLoading(button, true, "Guardando...");
+
+                const totals = recalculateEditOrderTotals();
+
+                const payload = {
+                    client_id: document.querySelector("#edit-order-client-select").value,
+                    status: document.querySelector("#edit-order-status").value,
+                    created_at: document.querySelector("#edit-order-created-at").value
+                    ? new Date(document.querySelector("#edit-order-created-at").value).toISOString(): order.created_at,
+                    total_sale: totals.totalSale,
+                    total_cost: totals.totalCost,
+                    total_profit: totals.totalProfit
+                };
+
+                const {
+                    error: updateError
+                } = await supabaseClient
+                .from("orders")
+                .update(payload)
+                .eq("id", orderId);
+
+                if (updateError) throw updateError;
+
+                const newItems = [...document.querySelectorAll(".edit-order-item-row")].map(row => {
+                    const select = row.querySelector(".edit-order-product-select");
+                    const quantity = Number(row.querySelector(".edit-order-quantity").value) || 1;
+                    const selectedOption = select.options[select.selectedIndex];
+
+                    const salePrice = Number(selectedOption?.dataset?.sale) || 0;
+                    const costPrice = Number(selectedOption?.dataset?.cost) || 0;
+
+                    return {
+                        order_id: orderId,
+                        product_id: select.value,
+                        product_name: selectedOption?.dataset?.name || "Producto",
+                        quantity,
+                        sale_price: salePrice,
+                        cost_price: costPrice
+                    };
+                }).filter(item => item.product_id);
+
+                await updateInventoryAfterEditOrder(
+                    businessId,
+                    orderId,
+                    originalOrderItems,
+                    newItems,
+                    profile
+                );
+
+                const {
+                    error: deleteItemsError
+                } = await supabaseClient
+                .from("order_items")
+                .delete()
+                .eq("order_id", orderId);
+
+                if (deleteItemsError) throw deleteItemsError;
+
+                if (newItems.length > 0) {
+                    const {
+                        error: insertItemsError
+                    } = await supabaseClient
+                    .from("order_items")
+                    .insert(newItems);
+
+                    if (insertItemsError) throw insertItemsError;
+                }
+
+                showToast("Pedido actualizado correctamente.", "success");
+                renderOrdersView(profile, activeBusiness);
+
+            } catch (error) {
+                console.error(error);
+                showToast(error.message || "No se pudo actualizar el pedido.", "error");
+            } finally {
+                setButtonLoading(button, false);
+            }
+        });
+    }
+
+    // Actualizar Inventario Después de Editar Pedido Modal
+    async function updateInventoryAfterEditOrder(
+        businessId,
+        orderId,
+        originalItems,
+        newItems,
+        profile = null
+    ) {
+        if (!businessId) {
+            throw new Error("No se encontró negocio activo.");
+        }
+
+        const productIds = [
+            ...new Set([
+                ...originalItems.map(item => item.product_id).filter(Boolean),
+                ...newItems.map(item => item.product_id).filter(Boolean)
+            ])
+        ];
+
+        if (productIds.length === 0) return;
+
+        const {
+            data: products,
+            error
+        } = await supabaseClient
+        .from("products")
+        .select("id, name, stock")
+        .eq("business_id", businessId)
+        .in("id", productIds);
+
+        if (error) throw error;
+
+        const productsMap = new Map(
+            (products || []).map(product => [
+                product.id,
+                {
+                    ...product,
+                    stock: Number(product.stock || 0)
+                }])
+        );
+
+        const originalMap = new Map();
+
+        originalItems.forEach(item => {
+            if (!item.product_id) return;
+
+            originalMap.set(
+                item.product_id,
+                (originalMap.get(item.product_id) || 0) + Number(item.quantity || 0)
+            );
+        });
+
+        const newMap = new Map();
+
+        newItems.forEach(item => {
+            if (!item.product_id) return;
+
+            newMap.set(
+                item.product_id,
+                (newMap.get(item.product_id) || 0) + Number(item.quantity || 0)
+            );
+        });
+
+        const updates = [];
+
+        for (const productId of productIds) {
+            const product = productsMap.get(productId);
+
+            if (!product) continue;
+
+            const originalQty = originalMap.get(productId) || 0;
+            const newQty = newMap.get(productId) || 0;
+
+            const difference = newQty - originalQty;
+
+            if (difference === 0) continue;
+
+            const newStock = product.stock - difference;
+
+            if (newStock < 0) {
+                throw new Error(
+                    `Stock insuficiente para "${product.name}". Disponible: ${product.stock}, solicitado extra: ${difference}.`
+                );
+            }
+
+            updates.push({
+                id: productId,
+                difference,
+                stockBefore: product.stock,
+                stockAfter: newStock
+            });
+        }
+
+        for (const item of updates) {
+            const {
+                error: updateError
+            } = await supabaseClient
+            .from("products")
+            .update({
+                stock: item.stockAfter
+            })
+            .eq("id", item.id)
+            .eq("business_id", businessId);
+
+            if (updateError) throw updateError;
+
+            await registerInventoryMovement( {
+                businessId,
+                userId: profile?.id,
+                productId: item.id,
+                movementType: item.difference > 0 ? "salida": "entrada",
+                quantity: Math.abs(item.difference),
+                stockBefore: item.stockBefore,
+                stockAfter: item.stockAfter,
+                referenceType: "order",
+                referenceId: orderId,
+                notes: item.difference > 0
+                ? "Salida por aumento en edición de pedido": "Devolución por disminución en edición de pedido"
+            });
+        }
+    }
+
+    // Vista Editar Productos Modal Pedidos
+    async function renderEditOrderItems(businessId,
+        items = []) {
+        const container = document.querySelector("#edit-order-items-container");
+
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        if (!items.length) {
+            container.innerHTML = `
+            <div class="rounded-3xl bg-slate-100 dark:bg-slate-900 p-5 text-center">
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+            Este pedido no tiene productos.
+            </p>
+            </div>
+            `;
+            return;
+        }
+
+        for (const item of items) {
+            await addEditOrderItemRow(businessId, item);
+        }
+
+        recalculateEditOrderTotals();
+    }
+
+    // Agregar Producto Vista Editar Pedido Modal Pedidos
+    async function addEditOrderItemRow(businessId, existingItem = null) {
+        const container = document.querySelector("#edit-order-items-container");
+
+        if (!container || !businessId) return;
+
+        const {
+            data: products,
+            error
+        } = await supabaseClient
+        .from("products")
+        .select("id, brand, name, presentation, cost_price, sale_price, stock")
+        .eq("business_id", businessId)
+        .eq("is_active", true)
+        .order("name", {
+            ascending: true
+        });
+
+        if (error) {
+            console.error(error);
+            showToast("No se pudieron cargar productos.", "error");
+            return;
+        }
+
+        const rowId = existingItem?.id || crypto.randomUUID();
+
+        const html = `
+        <article
+        class="edit-order-item-row aqua-card p-4 space-y-3"
+        data-row-id="${rowId}"
+        data-existing-id="${existingItem?.id || ""}"
+        >
+
+        <div class="flex items-center justify-between gap-3">
+        <h3 class="font-bold">Producto</h3>
+
+        <button
+        type="button"
+        class="btn-remove-edit-order-item text-red-500 font-bold"
+        >
+        Eliminar
+        </button>
+        </div>
+
+        <label class="block">
+        <span class="form-label">Producto</span>
+
+        <select class="form-control edit-order-product-select">
+        <option value="">Seleccionar producto</option>
+
+        ${(products || []).map(product => `
+            <option
+            value="${product.id}"
+            data-name="${product.name}"
+            data-cost="${product.cost_price}"
+            data-sale="${product.sale_price}"
+            data-stock="${product.stock}"
+            ${existingItem?.product_id === product.id ? "selected": ""}
+            >
+            ${product.brand ? product.brand + " · ": ""}${product.name} · ${product.presentation || ""}
+            </option>
+            `).join("")}
+
+        </select>
+        </label>
+
+        <label class="block">
+        <span class="form-label">Cantidad</span>
+        <input
+        type="number"
+        min="1"
+        step="1"
+        value="${existingItem?.quantity || 1}"
+        class="form-control edit-order-quantity"
+        />
+        </label>
+
+        <div class="grid grid-cols-3 gap-3">
+        <div class="order-total-box">
+        <p>Venta</p>
+        <p class="edit-item-sale">$0.00</p>
+        </div>
+
+        <div class="order-total-box">
+        <p>Costo</p>
+        <p class="edit-item-cost">$0.00</p>
+        </div>
+
+        <div class="order-total-box">
+        <p>Ganancia</p>
+        <p class="edit-item-profit">$0.00</p>
+        </div>
+        </div>
+
+        </article>
+        `;
+
+        container.insertAdjacentHTML("beforeend", html);
+
+        bindEditOrderItemEvents();
+        recalculateEditOrderTotals();
+    }
+
+    // Helper Editar Modal Pedidos
+    function bindEditOrderItemEvents() {
+        document.querySelectorAll(".edit-order-product-select, .edit-order-quantity").forEach(input => {
+            input.onchange = recalculateEditOrderTotals;
+            input.oninput = recalculateEditOrderTotals;
+        });
+
+        document.querySelectorAll(".btn-remove-edit-order-item").forEach(button => {
+            button.onclick = () => {
+                button.closest(".edit-order-item-row")?.remove();
+                recalculateEditOrderTotals();
+            };
+        });
+    }
+
+    // Recalcular Totales Editar Pedido Modal Pedidos
+    function recalculateEditOrderTotals() {
+        let totalSale = 0;
+        let totalCost = 0;
+        let totalProfit = 0;
+
+        document.querySelectorAll(".edit-order-item-row").forEach(row => {
+            const select = row.querySelector(".edit-order-product-select");
+            const quantityInput = row.querySelector(".edit-order-quantity");
+
+            const selectedOption = select.options[select.selectedIndex];
+
+            const quantity = Number(quantityInput.value) || 0;
+            const salePrice = Number(selectedOption?.dataset?.sale) || 0;
+            const costPrice = Number(selectedOption?.dataset?.cost) || 0;
+
+            const itemSale = quantity * salePrice;
+            const itemCost = quantity * costPrice;
+            const itemProfit = itemSale - itemCost;
+
+            row.querySelector(".edit-item-sale").textContent = formatCurrency(itemSale);
+            row.querySelector(".edit-item-cost").textContent = formatCurrency(itemCost);
+            row.querySelector(".edit-item-profit").textContent = formatCurrency(itemProfit);
+
+            totalSale += itemSale;
+            totalCost += itemCost;
+            totalProfit += itemProfit;
+        });
+
+        document.querySelector("#edit-order-total-sale").textContent = formatCurrency(totalSale);
+        document.querySelector("#edit-order-total-cost").textContent = formatCurrency(totalCost);
+        document.querySelector("#edit-order-total-profit").textContent = formatCurrency(totalProfit);
+
+        return {
+            totalSale,
+            totalCost,
+            totalProfit
+        };
+    }
+
+    //Helper Fecha Local
+    function toDateTimeLocalValue(dateString) {
+        if (!dateString) return "";
+
+        const date = new Date(dateString);
+        const offset = date.getTimezoneOffset();
+
+        const localDate = new Date(date.getTime() - offset * 60000);
+
+        return localDate.toISOString().slice(0, 16);
+    }
+
+    // Función Cargar Clientes Editar Pedido
+    async function loadClientsForEditOrder(businessId, selectedClientId, currentClient = null) {
+        const select = document.querySelector("#edit-order-client-select");
+        const whatsappView = document.querySelector("#edit-order-client-whatsapp-view");
+        const addressView = document.querySelector("#edit-order-client-address-view");
+
+        if (!select || !businessId) return;
+
+        const {
+            data,
+            error
+        } = await supabaseClient
+        .from("clients")
+        .select("id, name, whatsapp, address")
+        .eq("business_id", businessId)
+        .eq("is_active", true)
+        .order("name", {
+            ascending: true
+        });
+
+        if (error) {
+            console.error(error);
+            select.innerHTML = `<option value="">Error al cargar clientes</option>`;
+            return;
+        }
+
+        select.innerHTML = `
+        <option value="">Seleccionar cliente</option>
+        ${(data || []).map(client => `
+            <option
+            value="${client.id}"
+            data-whatsapp="${client.whatsapp || ""}"
+            data-address="${client.address || ""}"
+            ${client.id === selectedClientId ? "selected": ""}
+            >
+            ${client.name}
+            </option>
+            `).join("")}
+        `;
+
+        const updateClientPreview = () => {
+            const option = select.options[select.selectedIndex];
+
+            whatsappView.textContent = option?.dataset?.whatsapp || "—";
+            addressView.textContent = option?.dataset?.address || "—";
+        };
+
+        select.addEventListener("change", updateClientPreview);
+        updateClientPreview();
     }
 
     // Función Agregar Productos Pedidos
@@ -3957,34 +4654,69 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (itemsError) throw itemsError;
 
             for (const item of items) {
-                const newStock = item.stock - item.quantity;
+
+                const currentStock =
+                Number(item.stock || 0);
+
+                const newStock =
+                currentStock - item.quantity;
+
+                /* Actualizar stock */
 
                 const {
                     error: stockError
-                } = await supabaseClient
+                } =
+                await supabaseClient
                 .from("products")
                 .update({
                     stock: newStock
                 })
-                .eq("id", item.product_id);
+                .eq(
+                    "id",
+                    item.product_id
+                );
 
-                if (stockError) throw stockError;
+                if (stockError)
+                    throw stockError;
 
-                const {
-                    error: movementError
-                } = await supabaseClient
-                .from("inventory_movements")
-                .insert({
-                    business_id: businessId,
-                    product_id: item.product_id,
-                    user_id: profile.id,
-                    movement_type: "salida",
-                    quantity: item.quantity,
-                    reason: `Salida por pedido #${order.order_number || ""}`
+
+                /* Registrar historial */
+
+                await registerInventoryMovement( {
+
+                    businessId,
+
+                    userId:
+                    profile.id,
+
+                    productId:
+                    item.product_id,
+
+                    movementType:
+                    "salida",
+
+                    quantity:
+                    item.quantity,
+
+                    stockBefore:
+                    currentStock,
+
+                    stockAfter:
+                    newStock,
+
+                    referenceType:
+                    "order",
+
+                    referenceId:
+                    order.id,
+
+                    notes:
+                    `Salida automática por creación pedido #${order.order_number || order.id}`
+
                 });
 
-                if (movementError) throw movementError;
             }
+
 
             showToast("Pedido guardado correctamente.", "success");
             renderOrdersView(profile, activeBusiness);
@@ -6132,15 +6864,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (updateError) throw updateError;
 
-                await supabaseClient
-                .from("inventory_movements")
-                .insert({
-                    business_id: businessId,
-                    product_id: product.id,
-                    user_id: profile.id,
-                    movement_type: "entrada",
+                await registerInventoryMovement( {
+                    businessId,
+                    productId: product.id,
+                    movementType: "entrada",
                     quantity,
-                    reason: "Reabastecimiento de producto"
+                    stockBefore: Number(product.stock || 0),
+                    stockAfter: updatePayload.stock,
+                    referenceType: "product",
+                    referenceId: product.id,
+                    notes: "Entrada por reabastecimiento de producto"
                 });
 
                 showToast("Producto reabastecido correctamente.", "success");
@@ -6994,188 +7727,709 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-});
+    //PDF Individual Pedidos
+    async function downloadSingleOrderPDF(orderId) {
+        if (!window.jspdf) {
+            showToast("jsPDF no está cargado.", "error");
+            return;
+        }
 
-//PDF Individual Pedidos
-async function downloadSingleOrderPDF(orderId) {
-    if (!window.jspdf) {
-        showToast("jsPDF no está cargado.", "error");
-        return;
-    }
+        const {
+            jsPDF
+        } = window.jspdf;
+        const doc = new jsPDF("p", "mm", "letter");
 
-    const {
-        jsPDF
-    } = window.jspdf;
-    const doc = new jsPDF("p", "mm", "letter");
+        if (typeof doc.autoTable !== "function") {
+            showToast("autoTable no está cargado.", "error");
+            return;
+        }
 
-    if (typeof doc.autoTable !== "function") {
-        showToast("autoTable no está cargado.", "error");
-        return;
-    }
+        const {
+            data: order,
+            error
+        } = await supabaseClient
+        .from("orders")
+        .select(`
+            id,
+            order_number,
+            status,
+            total_sale,
+            total_cost,
+            total_profit,
+            created_at,
+            clients (
+            name,
+            whatsapp,
+            address
+            ),
+            profiles (
+            full_name
+            ),
+            order_items (
+            product_name,
+            quantity,
+            sale_price,
+            cost_price
+            )
+            `)
+        .eq("id", orderId)
+        .maybeSingle();
 
-    const {
-        data: order,
-        error
-    } = await supabaseClient
-    .from("orders")
-    .select(`
-        id,
-        order_number,
-        status,
-        total_sale,
-        total_cost,
-        total_profit,
-        created_at,
-        clients (
-        name,
-        whatsapp,
-        address
-        ),
-        profiles (
-        full_name
-        ),
-        order_items (
-        product_name,
-        quantity,
-        sale_price,
-        cost_price
-        )
-        `)
-    .eq("id", orderId)
-    .maybeSingle();
+        if (error || !order) {
+            console.error(error);
+            showToast("No se pudo cargar el pedido.", "error");
+            return;
+        }
 
-    if (error || !order) {
-        console.error(error);
-        showToast("No se pudo cargar el pedido.", "error");
-        return;
-    }
+        let logoBase64 = null;
 
-    let logoBase64 = null;
-
-    try {
+        try {
             logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
         } catch (error) {
             console.warn("No se pudo cargar el logo para el PDF:", error);
 
-        showToast(
-            "Logo no encontrado",
-            "warning"
+            showToast(
+                "Logo no encontrado",
+                "warning"
+            );
+
+        }
+
+        doc.setFillColor(14, 165, 233);
+        doc.rect(0, 0, 216, 38, "F");
+
+        if (logoBase64) {
+            doc.addImage(logoBase64, "PNG", 16, 8, 18, 18);
+        }
+
+        const titleX = logoBase64 ? 40: 16;
+
+        const statusLabels = {
+            pendiente: "Pendiente",
+            en_proceso: "En proceso",
+            entregado: "Entregado",
+            pagado: "Pagado",
+            cancelado: "Cancelado"
+        };
+
+        const statusLabel =
+        statusLabels[
+            order.status
+        ] || order.status || "—";
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.text("AquaControl", titleX, 16);
+
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text("Comprobante de pedido", titleX, 23);
+
+        doc.setTextColor(15, 23, 42);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.text(`Pedido #${String(order.order_number || 0).padStart(4, "0")}`, 16, 50);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`Cliente: ${order.clients?.name || "Sin cliente"}`, 16, 60);
+        doc.text(`WhatsApp: ${order.clients?.whatsapp || "—"}`, 16, 66);
+        doc.text(`Domicilio: ${order.clients?.address || "—"}`, 16, 72);
+        doc.text(`Vendedor: ${order.profiles?.full_name || "—"}`, 16, 78);
+        doc.text(`Fecha: ${formatDate(order.created_at)}`, 16, 84);
+        doc.text(
+            `Estatus: ${statusLabel}`,
+            16,
+            90
         );
 
+        const rows = (order.order_items || []).map(item => {
+            const quantity = Number(item.quantity || 0);
+            const salePrice = Number(item.sale_price || 0);
+            const subtotalSale = quantity * salePrice;
+
+            return [
+                item.product_name || "Producto",
+                quantity,
+                formatCurrency(salePrice),
+                formatCurrency(subtotalSale),
+            ];
+        });
+
+        doc.autoTable({
+            startY: 100,
+            head: [["Producto", "Cantidad", "Precio", "Subtotal"]],
+            body: rows.length ? rows: [["Sin productos", "—", "—", "—"]],
+            theme: "grid",
+            headStyles: {
+                fillColor: [14, 165, 233],
+                textColor: 255,
+                fontStyle: "bold",
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 3,
+            },
+        });
+
+        const finalY = doc.lastAutoTable.finalY + 10;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Resumen", 16, finalY);
+
+        doc.autoTable({
+            startY: finalY + 5,
+            body: [
+                ["Venta total", formatCurrency(order.total_sale || 0)],
+                ["Costo total", formatCurrency(order.total_cost || 0)],
+                ["Ganancia", formatCurrency(order.total_profit || 0)],
+            ],
+            theme: "plain",
+            styles: {
+                fontSize: 11,
+                cellPadding: 3,
+            },
+            columnStyles: {
+                0: {
+                    fontStyle: "bold"
+                },
+                1: {
+                    halign: "right"
+                },
+            },
+        });
+
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text("Generado por AquaControl", 16, 270);
+
+        const fileName =
+        `Pedido-AquaControl-${
+        String(
+            order.order_number || 0
+        ).padStart(4, "0")
+        }.pdf`;
+
+        const pdfBlob =
+        doc.output(
+            "blob"
+        );
+
+        await sharePDFToWhatsApp(
+            pdfBlob,
+            fileName,
+            order
+        );
     }
 
-    doc.setFillColor(14, 165, 233);
-    doc.rect(0, 0, 216, 38, "F");
+    // Helper Compartir PDF WhatsApp
+    async function sharePDFToWhatsApp(blob, fileName, order) {
+        const rawPhone = order.clients?.whatsapp || "";
+        const cleanPhone = rawPhone.replace(/\D/g, "");
 
-    if (logoBase64) {
-        doc.addImage(logoBase64, "PNG", 16, 8, 18, 18);
+        if (!cleanPhone) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+
+            a.href = url;
+            a.download = fileName;
+            a.click();
+
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+            showToast("Cliente sin WhatsApp. PDF descargado.", "warning");
+            return;
+        }
+
+        const file = new File([blob], fileName, {
+            type: "application/pdf"
+        });
+
+        const message = `🧾 Pedido #${String(order.order_number || 0).padStart(4, "0")}
+
+        Cliente: ${order.clients?.name || "Cliente"}
+        Total: ${formatCurrency(order.total_sale || 0)}
+
+        Te comparto el comprobante de tu pedido.`;
+
+        const whatsappUrl = `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+        window.open(whatsappUrl, "_blank");
+
+        if (navigator.canShare && navigator.canShare({
+            files: [file]
+        })) {
+            showSharePDFModal(file, message);
+            return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+
+        a.href = url;
+        a.download = fileName;
+        a.click();
+
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        showToast("WhatsApp abierto. PDF descargado para adjuntarlo.", "warning");
     }
 
-    const titleX = logoBase64 ? 40: 16;
+    // Modal Compartir PDF WhatsApp
+    function showSharePDFModal(file, message) {
+        const modal = document.createElement("div");
 
-    const statusLabels = {
-        pendiente: "Pendiente",
-        en_proceso: "En proceso",
-        entregado: "Entregado",
-        pagado: "Pagado",
-        cancelado: "Cancelado"
-    };
+        modal.className = "cancel-order-backdrop";
 
-    const statusLabel =
-    statusLabels[
-        order.status
-    ] || order.status || "—";
+        modal.innerHTML = `
+        <div class="cancel-order-modal">
+        <div class="cancel-order-icon">🧾</div>
 
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("AquaControl", titleX, 16);
+        <h2>PDF listo</h2>
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("Comprobante de pedido", titleX, 23);
+        <p>
+        El comprobante ya fue generado.
+        <br>
+        Toca compartir para enviarlo por WhatsApp.
+        </p>
 
-    doc.setTextColor(15, 23, 42);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text(`Pedido #${String(order.order_number || 0).padStart(4, "0")}`, 16, 50);
+        <div class="cancel-order-buttons">
+        <button class="cancel-order-close">
+        Cerrar
+        </button>
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`Cliente: ${order.clients?.name || "Sin cliente"}`, 16, 60);
-    doc.text(`WhatsApp: ${order.clients?.whatsapp || "—"}`, 16, 66);
-    doc.text(`Domicilio: ${order.clients?.address || "—"}`, 16, 72);
-    doc.text(`Vendedor: ${order.profiles?.full_name || "—"}`, 16, 78);
-    doc.text(`Fecha: ${formatDate(order.created_at)}`, 16, 84);
-    doc.text(
-        `Estatus: ${statusLabel}`,
-        16,
-        90
-    );
+        <button class="cancel-order-confirm">
+        Compartir
+        </button>
+        </div>
+        </div>
+        `;
 
-    const rows = (order.order_items || []).map(item => {
-        const quantity = Number(item.quantity || 0);
-        const salePrice = Number(item.sale_price || 0);
-        const subtotalSale = quantity * salePrice;
+        document.body.appendChild(modal);
 
-        return [
-            item.product_name || "Producto",
+        modal.querySelector(".cancel-order-close").onclick = () => {
+            modal.remove();
+        };
+
+        modal.querySelector(".cancel-order-confirm").onclick = async () => {
+            try {
+                await navigator.share({
+                    title: "Pedido AquaControl",
+                    text: message,
+                    files: [file]
+                });
+
+                modal.remove();
+                showToast("PDF compartido.", "success");
+
+            } catch (error) {
+                console.error(error);
+                showToast("No se pudo compartir.", "error");
+            }
+        };
+    }
+
+    // Registrar Movimientos Inventario
+    async function registerInventoryMovement( {
+        businessId,
+        userId = null,
+        productId,
+        movementType,
+        quantity,
+        stockBefore,
+        stockAfter,
+        referenceType = null,
+        referenceId = null,
+        notes = null
+    }) {
+        const {
+            data: authData
+        } = await supabaseClient.auth.getUser();
+
+        const finalUserId =
+        userId ||
+        authData?.user?.id ||
+        null;
+
+        console.log("MOVIMIENTO INVENTARIO:", {
+            movementType,
             quantity,
-            formatCurrency(salePrice),
-            formatCurrency(subtotalSale),
-        ];
-    });
+            stockBefore,
+            stockAfter
+        });
 
-    doc.autoTable({
-        startY: 100,
-        head: [["Producto", "Cantidad", "Precio", "Subtotal"]],
-        body: rows.length ? rows: [["Sin productos", "—", "—", "—"]],
-        theme: "grid",
-        headStyles: {
-            fillColor: [14, 165, 233],
-            textColor: 255,
-            fontStyle: "bold",
-        },
-        styles: {
-            fontSize: 9,
-            cellPadding: 3,
-        },
-    });
+        const {
+            error
+        } = await supabaseClient
+        .from("inventory_movements")
+        .insert({
+            business_id: businessId,
+            user_id: finalUserId,
+            product_id: productId,
+            movement_type: movementType,
+            quantity,
+            stock_before: stockBefore,
+            stock_after: stockAfter,
+            reference_type: referenceType,
+            reference_id: referenceId,
+            notes
+        });
 
-    const finalY = doc.lastAutoTable.finalY + 10;
+        if (error) throw error;
+    }
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text("Resumen", 16, finalY);
+    // Historial Movimiento Cancelar Pedido
+    async function restoreInventoryFromCancelledOrder(orderId, businessId, profile) {
+        const {
+            data: orderItems,
+            error
+        } = await supabaseClient
+        .from("order_items")
+        .select("product_id, product_name, quantity")
+        .eq("order_id", orderId);
 
-    doc.autoTable({
-        startY: finalY + 5,
-        body: [
-            ["Venta total", formatCurrency(order.total_sale || 0)],
-            ["Costo total", formatCurrency(order.total_cost || 0)],
-            ["Ganancia", formatCurrency(order.total_profit || 0)],
-        ],
-        theme: "plain",
-        styles: {
-            fontSize: 11,
-            cellPadding: 3,
-        },
-        columnStyles: {
-            0: {
-                fontStyle: "bold"
-            },
-            1: {
-                halign: "right"
-            },
-        },
-    });
+        if (error) throw error;
 
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.text("Generado por AquaControl", 16, 270);
+        if (!orderItems || orderItems.length === 0) return;
 
-    const fileName = `Pedido-AquaControl-${String(order.order_number || 0).padStart(4, "0")}.pdf`;
+        const productIds = orderItems
+        .map(item => item.product_id)
+        .filter(Boolean);
 
-    doc.save(fileName);
-    showToast("PDF del pedido generado.", "success");
-}
+        const {
+            data: products,
+            error: productsError
+        } = await supabaseClient
+        .from("products")
+        .select("id, stock")
+        .eq("business_id", businessId)
+        .in("id", productIds);
+
+        if (productsError) throw productsError;
+
+        const productsMap = new Map(
+            (products || []).map(product => [
+                product.id,
+                Number(product.stock || 0)
+            ])
+        );
+
+        for (const item of orderItems) {
+            const stockBefore = productsMap.get(item.product_id) || 0;
+            const quantity = Number(item.quantity || 0);
+            const stockAfter = stockBefore + quantity;
+
+            const {
+                error: updateError
+            } = await supabaseClient
+            .from("products")
+            .update({
+                stock: stockAfter
+            })
+            .eq("id", item.product_id)
+            .eq("business_id", businessId);
+
+            if (updateError) throw updateError;
+
+            await registerInventoryMovement( {
+                businessId,
+                userId: profile?.id,
+                productId: item.product_id,
+                movementType: "entrada",
+                quantity,
+                stockBefore,
+                stockAfter,
+                referenceType: "order",
+                referenceId: orderId,
+                notes: "Inventario restaurado por cancelación de pedido"
+            });
+        }
+    }
+
+    // Vista Historial Inventario
+    async function renderInventoryHistoryView(profile, activeBusiness) {
+
+        const app = document.querySelector("#app");
+        const businessId = activeBusiness?.businesses?.id;
+
+        app.innerHTML = `
+        <section class="has-bottom-nav min-h-screen bg-transparent px-4 py-6">
+        <div class="max-w-5xl mx-auto space-y-4">
+
+        <header class="aqua-card inventory-history-header p-5 space-y-4">
+
+        <button
+        id="back-products"
+        type="button"
+        class="history-back-btn"
+        >
+        ← Volver a productos
+        </button>
+
+
+        <div class="inventory-history-hero-icon">
+        <img src="./assets/icons/archivo.svg" alt="Historial">
+        </div>
+
+        <div class="inventory-history-title-row">
+        <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Inventario
+        </p>
+
+        <h1 class="text-3xl font-black leading-tight">
+        Historial de movimientos
+        </h1>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">
+        Entradas, salidas, ventas y ajustes de stock.
+        </p>
+        </div>
+        </div>
+
+        <div class="inventory-history-filters">
+        <select id="inventory-filter" class="form-control">
+        <option value="">Todos</option>
+        <option value="entrada">Entradas</option>
+        <option value="salida">Salidas</option>
+        <option value="ajuste">Ajustes</option>
+        </select>
+
+        <input
+        id="inventory-search"
+        class="form-control"
+        placeholder="Buscar producto..."
+        />
+        </div>
+
+        </header>
+
+        <section class="aqua-card p-5">
+        <div id="inventory-history-list" class="space-y-3">
+        Cargando...
+        </div>
+        </section>
+
+        ${renderBottomNav("products")}
+
+        </div>
+        </section>
+        `;
+
+        bindBottomNav(profile, activeBusiness);
+
+        document
+        .querySelector("#back-products")
+        ?.addEventListener(
+            "click",
+            () => renderProductsView(profile, activeBusiness)
+        );
+
+        await loadInventoryHistory(
+            businessId
+        );
+
+        document
+        .querySelector("#inventory-filter")
+        ?.addEventListener(
+            "change",
+            () =>
+            loadInventoryHistory(
+                businessId
+            )
+        );
+
+        document
+        .querySelector("#inventory-search")
+        ?.addEventListener(
+            "input",
+            () =>
+            loadInventoryHistory(
+                businessId
+            )
+        );
+    }
+
+    //Cargar Historial Inventario
+    async function loadInventoryHistory(
+        businessId
+    ) {
+
+        const container =
+        document.querySelector(
+            "#inventory-history-list"
+        );
+
+        try {
+
+            const filter =
+            document.querySelector(
+                "#inventory-filter"
+            )?.value;
+
+            const search =
+            document.querySelector(
+                "#inventory-search"
+            )?.value
+            ?.trim()
+            ?.toLowerCase();
+
+            let query =
+            supabaseClient
+            .from(
+                "inventory_movements"
+            )
+            .select(`
+                *,
+                products (
+                name,
+                brand,
+                presentation
+                )
+                `)
+            .eq(
+                "business_id",
+                businessId
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+            if (filter) {
+                query =
+                query.eq(
+                    "movement_type",
+                    filter
+                );
+            }
+
+            const {
+                data,
+                error
+            } =
+            await query;
+
+            if (error)
+                throw error;
+
+            const filtered =
+            (data || [])
+            .filter(item => {
+
+                if (!search)
+                    return true;
+
+                return (
+                    item.products
+                    ?.name
+                    ?.toLowerCase()
+                    ?.includes(
+                        search
+                    )
+                );
+
+            });
+
+            if (
+                filtered.length === 0
+            ) {
+
+                container.innerHTML =
+                `
+                <div class="text-center text-slate-400 py-10">
+                Sin movimientos
+                </div>
+                `;
+
+                return;
+
+            }
+
+            container.innerHTML =
+            filtered
+            .map(item => {
+
+                const color =
+                item.movement_type ===
+                "entrada"
+                ? "emerald": "red";
+
+                const isEntrada = item.movement_type === "entrada";
+                const isSalida = item.movement_type === "salida";
+
+                const movementLabel = isEntrada
+                ? "Entrada": isSalida
+                ? "Salida": "Ajuste";
+
+                const movementClass = isEntrada
+                ? "movement-entry": isSalida
+                ? "movement-sale": "movement-edit";
+
+                const movementSign = isEntrada ? "+": isSalida ? "-": "±";
+
+                return `
+                <div class="inventory-movement-card">
+
+                <div class="inventory-movement-top">
+
+                <div>
+                <span class="movement-chip ${movementClass}">
+                ${movementLabel}
+                </span>
+
+                <h3 class="inventory-movement-product">
+                ${item.products?.brand || ""} ${item.products?.name || "-"}
+                </h3>
+
+                <p class="inventory-movement-presentation">
+                ${item.products?.presentation || ""}
+                </p>
+                </div>
+
+                <div class="inventory-movement-quantity ${movementClass}">
+                ${movementSign} ${item.quantity}
+                </div>
+
+                </div>
+
+                <div class="inventory-movement-footer">
+                <p>
+                Stock: ${item.stock_before} → ${item.stock_after}
+                </p>
+
+                <p>
+                ${formatDate(item.created_at)}
+                </p>
+                </div>
+
+                </div>
+                `;
+
+            })
+            .join("");
+
+        }
+
+        catch (
+            error
+        ) {
+
+            console.error(
+                error
+            );
+
+            container.innerHTML =
+            `
+            Error al cargar.
+            `;
+
+        }
+
+    }
+
+});
