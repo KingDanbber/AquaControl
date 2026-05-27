@@ -4226,3 +4226,30 @@ box-shadow:
 0 24px 45px
 rgba(14,165,233,.18);
 }
+
+.inventory-history-empty{
+display:inline-flex;
+align-items:center;
+gap:8px;
+
+padding:6px 12px;
+
+background:
+rgba(148,163,184,.08);
+
+border:
+1px solid rgba(148,163,184,.10);
+
+backdrop-filter:
+blur(8px);
+
+color:#94a3b8;
+
+font-size:.78rem;
+
+font-weight:700;
+
+border-radius:999px;
+
+width:fit-content;
+}
