@@ -8399,7 +8399,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 <div class="inventory-movement-footer">
                 <p>
-                Stock: ${item.stock_before} → ${item.stock_after}
+                ${
+                item.stock_before !== null && item.stock_after !== null
+                ? `Stock: ${item.stock_before} → ${item.stock_after}`: `<span class="inventory-history-empty">
+                    🕘 Stock histórico no disponible
+                </span>`
+                }
                 </p>
 
                 <p>
