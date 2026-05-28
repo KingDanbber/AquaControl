@@ -60,13 +60,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         <div class="flex flex-col items-center text-center mb-6">
         <img
-        src="./assets/logo-aquacontrol.png"
-        alt="AquaControl Logo"
+        src="./assets/logo-oasis-puro.png"
+        alt="Oasis Puro Logo"
         class="w-20 h-20 object-contain mb-3"
         onerror="this.style.display='none'"
         />
 
-        <h1 class="text-3xl font-bold tracking-tight text-white">AquaControl</h1>
+        <h1 class="text-3xl font-bold tracking-tight text-white">Oasis Puro</h1>
 
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">
         Administración de pedidos, ventas, gastos e inventario.
@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
 
         <p class="text-center text-xs text-slate-400 mt-6">
-        AquaControl · Versión inicial
+        Oasis Puro · Versión inicial
         </p>
         </div>
         </section>
@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="mb-6">
         <h1 class="auth-title">Iniciar sesión</h1>
         <p class="auth-subtitle">
-        Accede a AquaControl con tu correo y contraseña.
+        Accede a Oasis Puro con tu correo y contraseña.
         </p>
         </div>
 
@@ -277,7 +277,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="mb-6">
         <h1 class="auth-title">Crear cuenta</h1>
         <p class="auth-subtitle">
-        Registra un administrador para usar AquaControl.
+        Registra un administrador para usar Oasis Puro.
         </p>
         </div>
 
@@ -428,12 +428,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         <div class="dashboard-brand">
         <div class="dashboard-logo">
-        <img src="./assets/logo-aquacontrol.png" alt="AquaControl">
+        <img src="./assets/logo-oasis-puro.png" alt="Oasis Puro">
         </div>
 
         <div>
-        <p>AquaControl</p>
-        <h1>${activeBusiness?.businesses?.name || "AquaControl"}</h1>
+        <p>Oasis Puro</p>
+        <h1>${activeBusiness?.businesses?.name || "Oasis Puro"}</h1>
         </div>
         </div>
 
@@ -3044,7 +3044,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         Estatus: ${status}
 
         Gracias por tu compra.
-        AquaControl
+        Oasis Puro
         `.trim();
 
         const cleanPhone = whatsapp.replace(/\D/g, "");
@@ -6041,7 +6041,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         icon.textContent = "💡";
         title.textContent = "Listo para operar";
-        message.textContent = "Cuando registres pedidos, gastos o productos, AquaControl actualizará este resumen.";
+        message.textContent = "Cuando registres pedidos, gastos o productos, Oasis Puro actualizará este resumen.";
     }
 
     // Grafica Visual Estado Negocio
@@ -6929,7 +6929,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const businessName = activeBusiness?.businesses?.name || "AquaControl";
+        const businessName = activeBusiness?.businesses?.name || "Oasis Puro";
         const adminName = profile?.full_name || "Administrador";
         const month = document.querySelector("#report-month")?.value || "";
 
@@ -6942,7 +6942,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         let logoBase64 = null;
 
         try {
-            logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
+            logoBase64 = await loadImageAsBase64("./assets/logo-oasis-puro.png");
         } catch (error) {
             console.warn("No se pudo cargar el logo para el PDF:",
                 error);
@@ -6973,7 +6973,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(18);
-        doc.text("AquaControl", titleX, 16);
+        doc.text("Oasis Puro", titleX, 16);
 
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
@@ -7093,13 +7093,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             doc.setFontSize(8);
             doc.setTextColor(100);
             doc.text(
-                `AquaControl - Página ${i} de ${pageCount}`,
+                `Oasis Puro - Página ${i} de ${pageCount}`,
                 16,
                 270
             );
         }
 
-        const fileName = `Reporte-AquaControl-${month || "mensual"}.pdf`;
+        const fileName = `Reporte-Oasis Puro-${month || "mensual"}.pdf`;
 
         try {
             doc.save(fileName);
@@ -7134,7 +7134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const businessId = activeBusiness?.businesses?.id;
-        const businessName = activeBusiness?.businesses?.name || "AquaControl";
+        const businessName = activeBusiness?.businesses?.name || "Oasis Puro";
         const adminName = profile?.full_name || "Administrador";
 
         if (!businessId) {
@@ -7179,7 +7179,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         let logoBase64 = null;
 
         try {
-            logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
+            logoBase64 = await loadImageAsBase64("./assets/logo-oasis-puro.png");
         } catch (error) {
             console.warn("No se pudo cargar logo:", error);
         }
@@ -7196,7 +7196,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(17);
-        doc.text("AquaControl", titleX, 14);
+        doc.text("Oasis Puro", titleX, 14);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
@@ -7294,10 +7294,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(100);
-            doc.text(`AquaControl - Página ${i} de ${pageCount}`, 14, 205);
+            doc.text(`Oasis Puro - Página ${i} de ${pageCount}`, 14, 205);
         }
 
-        doc.save(`Pedidos-AquaControl-${new Date().toISOString().slice(0, 10)}.pdf`);
+        doc.save(`Pedidos-Oasis Puro-${new Date().toISOString().slice(0, 10)}.pdf`);
     }
 
     // Descargar PDF Gastos
@@ -7318,7 +7318,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const businessId = activeBusiness?.businesses?.id;
-        const businessName = activeBusiness?.businesses?.name || "AquaControl";
+        const businessName = activeBusiness?.businesses?.name || "Oasis Puro";
         const adminName = profile?.full_name || "Administrador";
 
         if (!businessId) {
@@ -7360,7 +7360,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         let logoBase64 = null;
 
         try {
-            logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
+            logoBase64 = await loadImageAsBase64("./assets/logo-oasis-puro.png");
         } catch (error) {
             console.warn("No se pudo cargar logo:", error);
         }
@@ -7377,7 +7377,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(17);
-        doc.text("AquaControl", titleX, 14);
+        doc.text("Oasis Puro", titleX, 14);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
@@ -7407,7 +7407,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             });
 
-            doc.save(`Gastos-AquaControl-${new Date().toISOString().slice(0, 10)}.pdf`);
+            doc.save(`Gastos-Oasis Puro-${new Date().toISOString().slice(0, 10)}.pdf`);
             return;
         }
 
@@ -7561,10 +7561,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(100);
-            doc.text(`AquaControl - Página ${i} de ${pageCount}`, 14, 270);
+            doc.text(`Oasis Puro - Página ${i} de ${pageCount}`, 14, 270);
         }
 
-        doc.save(`Gastos-AquaControl-${new Date().toISOString().slice(0, 10)}.pdf`);
+        doc.save(`Gastos-Oasis Puro-${new Date().toISOString().slice(0, 10)}.pdf`);
     }
 
     // Convertir URL cloudinary a Base64
@@ -7627,7 +7627,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         let logoBase64 = null;
 
         try {
-            logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
+            logoBase64 = await loadImageAsBase64("./assets/logo-oasis-puro.png");
         } catch (error) {
             console.warn("No se pudo cargar el logo para el PDF:", error);
         }
@@ -7656,7 +7656,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(18);
-        doc.text("AquaControl", titleX, 15);
+        doc.text("Oasis Puro", titleX, 15);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
@@ -7723,7 +7723,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             y += 44;
         }
 
-        doc.save("catalogo-productos-aquacontrol.pdf");
+        doc.save("catalogo-productos-Oasis Puro.pdf");
     }
 
 
@@ -7784,7 +7784,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         let logoBase64 = null;
 
         try {
-            logoBase64 = await loadImageAsBase64("./assets/logo-aquacontrol.png");
+            logoBase64 = await loadImageAsBase64("./assets/logo-oasis-puro.png");
         } catch (error) {
             console.warn("No se pudo cargar el logo para el PDF:", error);
 
@@ -7820,7 +7820,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(18);
-        doc.text("AquaControl", titleX, 16);
+        doc.text("Oasis Puro", titleX, 16);
 
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
@@ -7903,10 +7903,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         doc.setFontSize(8);
         doc.setTextColor(100);
-        doc.text("Generado por AquaControl", 16, 270);
+        doc.text("Generado por Oasis Puro", 16, 270);
 
         const fileName =
-        `Pedido-AquaControl-${
+        `Pedido-Oasis Puro-${
         String(
             order.order_number || 0
         ).padStart(4, "0")
@@ -8016,7 +8016,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         modal.querySelector(".cancel-order-confirm").onclick = async () => {
             try {
                 await navigator.share({
-                    title: "Pedido AquaControl",
+                    title: "Pedido Oasis Puro",
                     text: message,
                     files: [file]
                 });

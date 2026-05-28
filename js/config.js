@@ -3,9 +3,9 @@
 ========================= */
 
 export const APP_CONFIG = {
-  name: "AquaControl",
+  name: "Oasis Puro",
   version: "0.1.0",
-  logo: "./assets/logo-aquacontrol.png",
+  logo: "./assets/logo-oasis-puro.png",
 
   storageKeys: {
     theme: "aquacontrol_theme",
