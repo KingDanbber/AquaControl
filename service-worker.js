@@ -1,10 +1,10 @@
-const CACHE_NAME = "aquacontrol-v1";
+const CACHE_NAME = "oasis-puro-v1";
 
 const APP_FILES = [
   "./",
   "./index.html",
   "./pwa/manifest.json",
-  "./assets/logo-aquacontrol.png"
+  "./assets/logo-oasis-puro.png"
 ];
 
 self.addEventListener("install", (event) => {
