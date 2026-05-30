@@ -4253,3 +4253,137 @@ border-radius:999px;
 
 width:fit-content;
 }
+
+/* ==========================
+   INVENTORY TIMELINE
+========================== */
+
+.inventory-timeline-group{
+position:relative;
+padding-left:20px;
+}
+
+.inventory-timeline-group::before{
+content:"";
+position:absolute;
+left:6px;
+top:34px;
+bottom:-18px;
+width:2px;
+background:rgba(14,165,233,.18);
+border-radius:999px;
+}
+
+.inventory-timeline-date{
+position:relative;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:12px;
+margin-bottom:14px;
+}
+
+.inventory-timeline-date::before{
+content:"";
+position:absolute;
+left:-20px;
+width:14px;
+height:14px;
+border-radius:999px;
+background:#22d3ee;
+box-shadow:0 0 0 6px rgba(34,211,238,.15);
+}
+
+.inventory-timeline-date span{
+font-size:1rem;
+font-weight:950;
+color:#0f172a;
+}
+
+.dark .inventory-timeline-date span{
+color:#f8fafc;
+}
+
+.inventory-timeline-date small{
+font-size:.78rem;
+font-weight:800;
+color:#64748b;
+background:rgba(148,163,184,.10);
+padding:6px 10px;
+border-radius:999px;
+}
+
+.inventory-timeline-list{
+display:flex;
+flex-direction:column;
+gap:14px;
+margin-bottom:24px;
+}
+
+@media(max-width:420px){
+.inventory-timeline-date{
+align-items:flex-start;
+flex-direction:column;
+}
+}
+
+.movement-chip{
+display:inline-flex;
+align-items:center;
+gap:6px;
+}
+
+.movement-chip-icon{
+width:14px;
+height:14px;
+object-fit:contain;
+}
+
+.timeline-date-summary{
+display:flex;
+gap:10px;
+margin-top:10px;
+margin-bottom:18px;
+flex-wrap:wrap;
+}
+
+.timeline-summary-entry{
+display:flex;
+align-items:center;
+gap:6px;
+
+padding:8px 14px;
+
+border-radius:999px;
+
+background:rgba(16,185,129,.12);
+
+color:#10b981;
+
+font-size:.8rem;
+font-weight:900;
+}
+
+.timeline-summary-exit{
+display:flex;
+align-items:center;
+gap:6px;
+
+padding:8px 14px;
+
+border-radius:999px;
+
+background:rgba(239,68,68,.12);
+
+color:#ef4444;
+
+font-size:.8rem;
+font-weight:900;
+}
+
+.timeline-summary-entry img,
+.timeline-summary-exit img{
+width:14px;
+height:14px;
+object-fit:contain;
+}
