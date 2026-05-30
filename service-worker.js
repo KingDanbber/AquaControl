@@ -1,4 +1,4 @@
-const CACHE_NAME = "oasis-puro-v1";
+const CACHE_NAME = "oasis-puro-v3";
 
 const APP_FILES = [
   "./",
