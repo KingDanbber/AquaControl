@@ -8350,69 +8350,57 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             }
 
-            container.innerHTML =
-            filtered
-            .map(item => {
+            const grouped = groupMovementsByDate(filtered);
 
-                const color =
-                item.movement_type ===
-                "entrada"
-                ? "emerald": "red";
+            container.innerHTML = Object.entries(grouped)
+            .map(([dateKey, movements]) => {
 
-                const isEntrada = item.movement_type === "entrada";
-                const isSalida = item.movement_type === "salida";
+                const totalEntries = movements
+                .filter(item => item.movement_type === "entrada")
+                .reduce((sum, item) => sum + Math.abs(Number(item.quantity || 0)), 0);
 
-                const movementLabel = isEntrada
-                ? "Entrada": isSalida
-                ? "Salida": "Ajuste";
+                const totalExits = movements
+                .filter(item => item.movement_type === "salida")
+                .reduce((sum, item) => sum + Math.abs(Number(item.quantity || 0)), 0);
 
-                const movementClass = isEntrada
-                ? "movement-entry": isSalida
-                ? "movement-sale": "movement-edit";
-
-                const movementSign = isEntrada ? "+": isSalida ? "-": "±";
+                const totalAdjustments = movements
+                .filter(item => item.movement_type === "ajuste")
+                .length;
 
                 return `
-                <div class="inventory-movement-card">
+                <section class="inventory-timeline-group">
 
-                <div class="inventory-movement-top">
+                <div class="inventory-timeline-date">
+                <span>${formatTimelineDate(dateKey)}</span>
+                <small>${movements.length} movimientos</small>
+                </div>
 
-                <div>
-                <span class="movement-chip ${movementClass}">
-                ${movementLabel}
+                <div class="timeline-date-summary">
+
+                <span class="timeline-summary-entry">
+                <img src="./assets/icons/abajo.svg">
+                +${totalEntries}
                 </span>
 
-                <h3 class="inventory-movement-product">
-                ${item.products?.brand || ""} ${item.products?.name || "-"}
-                </h3>
+                <span class="timeline-summary-exit">
+                <img src="./assets/icons/arriba.svg">
+                -${totalExits}
+                </span>
 
-                <p class="inventory-movement-presentation">
-                ${item.products?.presentation || ""}
-                </p>
-                </div>
-
-                <div class="inventory-movement-quantity ${movementClass}">
-                ${movementSign} ${item.quantity}
-                </div>
-
-                </div>
-
-                <div class="inventory-movement-footer">
-                <p>
-                ${
-                item.stock_before !== null && item.stock_after !== null
-                ? `Stock: ${item.stock_before} → ${item.stock_after}`: `<span class="inventory-history-empty">
-                    🕘 Stock histórico no disponible
-                </span>`
-                }
-                </p>
-
-                <p>
-                ${formatDate(item.created_at)}
-                </p>
-                </div>
+                ${totalAdjustments > 0 ? `
+                <span class="timeline-summary-adjust">
+                <img src="./assets/icons/ajuste.svg">
+                ${totalAdjustments}
+                </span>
+                `: ""}
 
                 </div>
+
+                <div class="inventory-timeline-list">
+                ${movements.map(item => renderInventoryMovementCard(item)).join("")}
+                </div>
+
+                </section>
                 `;
 
             })
@@ -8435,6 +8423,110 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         }
 
+    }
+
+    // Helper Timeline Historial de Inventario
+    function formatTimelineDate(dateString) {
+        const date = new Date(dateString);
+        const today = new Date();
+        const yesterday = new Date();
+
+        yesterday.setDate(today.getDate() - 1);
+
+        const dateKey = date.toISOString().slice(0, 10);
+        const todayKey = today.toISOString().slice(0, 10);
+        const yesterdayKey = yesterday.toISOString().slice(0, 10);
+
+        if (dateKey === todayKey) return "Hoy";
+        if (dateKey === yesterdayKey) return "Ayer";
+
+        return date.toLocaleDateString("es-MX", {
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        });
+    }
+
+    function groupMovementsByDate(movements) {
+        return movements.reduce((groups, item) => {
+            const key = item.created_at?.slice(0, 10) || "sin-fecha";
+
+            if (!groups[key]) {
+                groups[key] = [];
+            }
+
+            groups[key].push(item);
+
+            return groups;
+        },
+            {});
+    }
+
+    // Pintado Tarjetas Historial Inventario
+    function renderInventoryMovementCard(item) {
+        const isEntrada = item.movement_type === "entrada";
+        const isSalida = item.movement_type === "salida";
+
+        const movementLabel = isEntrada
+        ? "Entrada": isSalida
+        ? "Salida": "Ajuste";
+
+        const movementClass = isEntrada
+        ? "movement-entry": isSalida
+        ? "movement-sale": "movement-edit";
+
+        const movementIcon = isEntrada
+        ? "./assets/icons/abajo.svg": isSalida
+        ? "./assets/icons/arriba.svg": "./assets/icons/ajuste.svg";
+
+        const movementSign = isEntrada ? "+": isSalida ? "-": "±";
+
+        const stockText =
+        item.stock_before !== null && item.stock_after !== null
+        ? `<p>Stock: ${item.stock_before} → ${item.stock_after}</p>`: `
+        <span class="inventory-history-empty">
+        🕘 Stock histórico no disponible
+        </span>
+        `;
+
+        return `
+        <div class="inventory-movement-card">
+
+        <div class="inventory-movement-top">
+
+        <div>
+        <span class="movement-chip ${movementClass}">
+        <img
+        src="${movementIcon}"
+        class="movement-chip-icon"
+        alt=""
+        >
+        ${movementLabel}
+        </span>
+
+        <h3 class="inventory-movement-product">
+        ${item.products?.brand || ""} ${item.products?.name || "-"}
+        </h3>
+
+        <p class="inventory-movement-presentation">
+        ${item.products?.presentation || ""}
+        </p>
+        </div>
+
+        <div class="inventory-movement-quantity ${movementClass}">
+        ${movementSign} ${item.quantity}
+        </div>
+
+        </div>
+
+        <div class="inventory-movement-footer">
+        ${stockText}
+
+        <p>${formatDate(item.created_at)}</p>
+        </div>
+
+        </div>
+        `;
     }
 
 });
