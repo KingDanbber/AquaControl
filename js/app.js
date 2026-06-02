@@ -6,7 +6,9 @@ import {
     setButtonLoading,
     clearLocalSession,
     formatCurrency,
-    formatDate
+    formatDate,
+    formatDateTime,
+    getRelativeTime
 } from "./config.js";
 
 import {
@@ -8197,6 +8199,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         <option value="ajuste">Ajustes</option>
         </select>
 
+        <div
+        id="inventory-global-summary"
+        class="inventory-global-summary"
+        >
+        </div>
+
         <input
         id="inventory-search"
         class="form-control"
@@ -8287,6 +8295,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 name,
                 brand,
                 presentation
+                ),
+                profiles (
+                full_name
                 )
                 `)
             .eq(
@@ -8335,6 +8346,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             });
 
+            const summaryContainer = document.querySelector("#inventory-global-summary");
+
+            if (summaryContainer) {
+                summaryContainer.innerHTML = renderInventoryGlobalSummary(filtered);
+            }
+
             if (
                 filtered.length === 0
             ) {
@@ -8367,8 +8384,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                 .filter(item => item.movement_type === "ajuste")
                 .length;
 
+                let timelineStatusClass = "timeline-balanced";
+
+                if (totalEntries > totalExits) {
+                    timelineStatusClass = "timeline-entry-day";
+                } else if (totalExits > totalEntries) {
+                    timelineStatusClass = "timeline-exit-day";
+                } else if (totalEntries === 0 && totalExits === 0 && totalAdjustments > 0) {
+                    timelineStatusClass = "timeline-adjust-day";
+                }
+
                 return `
-                <section class="inventory-timeline-group">
+                <section class="inventory-timeline-group ${timelineStatusClass}">
 
                 <div class="inventory-timeline-date">
                 <span>${formatTimelineDate(dateKey)}</span>
@@ -8433,9 +8460,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         yesterday.setDate(today.getDate() - 1);
 
-        const dateKey = date.toISOString().slice(0, 10);
-        const todayKey = today.toISOString().slice(0, 10);
-        const yesterdayKey = yesterday.toISOString().slice(0, 10);
+        const dateKey = date.toISOString().slice(0,
+            10);
+        const todayKey = today.toISOString().slice(0,
+            10);
+        const yesterdayKey = yesterday.toISOString().slice(0,
+            10);
 
         if (dateKey === todayKey) return "Hoy";
         if (dateKey === yesterdayKey) return "Ayer";
@@ -8481,6 +8511,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const movementSign = isEntrada ? "+": isSalida ? "-": "±";
 
+        const originLabel = getMovementOriginLabel(item);
+
+        const userName =
+        item.profiles?.full_name || "Usuario no disponible";
+
         const stockText =
         item.stock_before !== null && item.stock_after !== null
         ? `<p>Stock: ${item.stock_before} → ${item.stock_after}</p>`: `
@@ -8513,6 +8548,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         </p>
         </div>
 
+        <div class="movement-details">
+
+        <div>
+        📦 <strong>${originLabel}</strong>
+        </div>
+
+        <div>
+        👤 <strong>${userName}</strong>
+        </div>
+
+        </div>
+
         <div class="inventory-movement-quantity ${movementClass}">
         ${movementSign} ${item.quantity}
         </div>
@@ -8522,9 +8569,93 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="inventory-movement-footer">
         ${stockText}
 
-        <p>${formatDate(item.created_at)}</p>
+        <p class="movement-time">
+        <div class="movement-date">
+        ${formatDateTime(item.created_at)}
         </div>
 
+        <div class="movement-relative-time">
+        ⏱ ${getRelativeTime(item.created_at)}
+        </div>
+        </p>
+        </div>
+
+        </div>
+        `;
+    }
+
+    // Etiqueta Origen Movimiento
+    function getMovementOriginLabel(item) {
+        const notes = (item.notes || "").toLowerCase();
+        const referenceType = item.reference_type;
+
+        if (referenceType === "order") {
+            if (notes.includes("cancel")) {
+                return "Cancelación de pedido";
+            }
+
+            if (notes.includes("edición") || notes.includes("edicion")) {
+                return "Edición de pedido";
+            }
+
+            return "Pedido";
+        }
+
+        if (referenceType === "product") {
+            return "Reabastecimiento";
+        }
+
+        if (referenceType === "adjustment") {
+            return "Ajuste manual";
+        }
+
+        if (notes.includes("reabaste")) {
+            return "Reabastecimiento";
+        }
+
+        if (notes.includes("pedido")) {
+            return "Pedido";
+        }
+
+        return "Movimiento manual";
+    }
+
+    function renderInventoryGlobalSummary(movements) {
+        const totalMovements = movements.length;
+
+        const totalEntries = movements
+        .filter(item => item.movement_type === "entrada")
+        .reduce((sum, item) => sum + Math.abs(Number(item.quantity || 0)),
+            0);
+
+        const totalExits = movements
+        .filter(item => item.movement_type === "salida")
+        .reduce((sum, item) => sum + Math.abs(Number(item.quantity || 0)),
+            0);
+
+        const totalAdjustments = movements
+        .filter(item => item.movement_type === "ajuste")
+        .length;
+
+        return `
+        <div class="inventory-summary-card">
+        <span>Movimientos</span>
+        <strong>${totalMovements}</strong>
+        </div>
+
+        <div class="inventory-summary-card summary-entry">
+        <span>Entradas</span>
+        <strong>+${totalEntries}</strong>
+        </div>
+
+        <div class="inventory-summary-card summary-exit">
+        <span>Salidas</span>
+        <strong>-${totalExits}</strong>
+        </div>
+
+        <div class="inventory-summary-card summary-adjust">
+        <span>Ajustes</span>
+        <strong>${totalAdjustments}</strong>
         </div>
         `;
     }

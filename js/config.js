@@ -4,7 +4,7 @@
 
 export const APP_CONFIG = {
   name: "Oasis Puro",
-  version: "0.2.0",
+  version: "0.1.0",
   logo: "./assets/logo-oasis-puro.png",
 
   storageKeys: {
@@ -46,7 +46,47 @@ export function formatDateTime(dateValue) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true
   }).format(new Date(dateValue));
+}
+
+export function getRelativeTime(dateValue) {
+    if (!dateValue) return "";
+
+    const now = new Date();
+    const date = new Date(dateValue);
+
+    const diffMs = now - date;
+
+    const minutes = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMs / 3600000);
+    const days = Math.floor(diffMs / 86400000);
+
+    if (minutes < 1) {
+        return "Hace unos segundos";
+    }
+
+    if (minutes < 60) {
+        return `Hace ${minutes} min`;
+    }
+
+    if (hours < 24) {
+        return `Hace ${hours} h`;
+    }
+
+    if (days < 30) {
+        return `Hace ${days} día${days !== 1 ? "s" : ""}`;
+    }
+
+    const months = Math.floor(days / 30);
+
+    if (months < 12) {
+        return `Hace ${months} mes${months !== 1 ? "es" : ""}`;
+    }
+
+    const years = Math.floor(months / 12);
+
+    return `Hace ${years} año${years !== 1 ? "s" : ""}`;
 }
 
 /* =========================
