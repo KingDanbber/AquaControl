@@ -8513,6 +8513,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const originLabel = getMovementOriginLabel(item);
 
+        const originClass = getMovementOriginClass(originLabel);
+
         const userName =
         item.profiles?.full_name || "Usuario no disponible";
 
@@ -8548,14 +8550,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         </p>
         </div>
 
-        <div class="movement-details">
+        <div class="movement-side-meta">
 
-        <div>
-        📦 <strong>${originLabel}</strong>
+        <div class="movement-origin ${originClass}">
+        <span>${getMovementOriginIcon(originLabel)}</span>
+        <strong>${originLabel}</strong>
         </div>
 
-        <div>
-        👤 <strong>${userName}</strong>
+        <div class="movement-user">
+        <span>👤</span> <strong>${userName}</strong>
         </div>
 
         </div>
@@ -8620,6 +8623,50 @@ document.addEventListener("DOMContentLoaded", async () => {
         return "Movimiento manual";
     }
 
+    // Función Colorido Movimientos
+    function getMovementOriginClass(originLabel) {
+        const origin = (originLabel || "").toLowerCase();
+
+        if (origin.includes("pedido") && origin.includes("edición")) {
+            return "origin-edit";
+        }
+
+        if (origin.includes("edición") || origin.includes("edicion")) {
+            return "origin-edit";
+        }
+
+        if (origin.includes("cancel")) {
+            return "origin-cancel";
+        }
+
+        if (origin.includes("reabaste")) {
+            return "origin-restock";
+        }
+
+        if (origin.includes("ajuste")) {
+            return "origin-adjust";
+        }
+
+        if (origin.includes("pedido")) {
+            return "origin-order";
+        }
+
+        return "origin-manual";
+    }
+
+    // Funcion Helper Iconos
+    function getMovementOriginIcon(originLabel) {
+        const origin = (originLabel || "").toLowerCase();
+
+        if (origin.includes("edición") || origin.includes("edicion")) return "✏️";
+        if (origin.includes("cancel")) return "↩️";
+        if (origin.includes("reabaste")) return "📥";
+        if (origin.includes("ajuste")) return "⚙️";
+        if (origin.includes("pedido")) return "📦";
+
+        return "📝";
+    }
+
     function renderInventoryGlobalSummary(movements) {
         const totalMovements = movements.length;
 
@@ -8636,7 +8683,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const totalAdjustments = movements
         .filter(item => item.movement_type === "ajuste")
         .length;
-
         return `
         <div class="inventory-summary-card">
         <span>Movimientos</span>
