@@ -4083,6 +4083,22 @@ border-color:rgba(148,163,184,.14);
 box-shadow:0 16px 34px rgba(0,0,0,.25);
 }
 
+.movement-side-meta{
+position:absolute;
+
+top:110px;   /* antes 86px */
+right:18px;
+
+display:flex;
+flex-direction:column;
+align-items:flex-end;
+
+gap:14px;    /* antes 12px */
+
+max-width:170px;
+z-index:2;
+}
+
 .inventory-movement-top{
 display:flex;
 justify-content:space-between;
@@ -4109,35 +4125,52 @@ color:#64748b;
 margin-top:4px;
 }
 
+.inventory-movement-card{
+position:relative;
+overflow:hidden;
+}
+
 .inventory-movement-quantity{
-font-size:1.2rem;
-font-weight:950;
-white-space:nowrap;
+position:absolute;
+top:14px;
+right:14px;
+z-index:3;
 }
 
 .movement-chip{
 display:inline-flex;
 align-items:center;
 justify-content:center;
-padding:5px 12px;
+gap:8px;
+
+padding:8px 14px;
 border-radius:999px;
-font-size:.72rem;
+
+font-size:.80rem;
 font-weight:900;
-letter-spacing:.02em;
+
+border:1px solid transparent;
+backdrop-filter:blur(8px);
+
+box-shadow:0 4px 12px rgba(0,0,0,.05);
+width:fit-content;
 }
 
 .movement-entry{
-background:rgba(16,185,129,.14);
+background:rgba(16,185,129,.12);
+border-color:rgba(16,185,129,.18);
 color:#10b981;
 }
 
 .movement-sale{
-background:rgba(239,68,68,.14);
+background:rgba(239,68,68,.12);
+border-color:rgba(239,68,68,.18);
 color:#ef4444;
 }
 
 .movement-edit{
-background:rgba(245,158,11,.16);
+background:rgba(245,158,11,.12);
+border-color:rgba(245,158,11,.18);
 color:#f59e0b;
 }
 
@@ -4534,10 +4567,10 @@ border-color:rgba(14,165,233,.16);
 
 .movement-user{
 margin-top:8px;
-display:inline-flex;
+display:flex;
 align-items:center;
-gap:8px;
-padding:7px 11px;
+gap:6px;
+padding:6px 10px;
 border-radius:999px;
 background:rgba(99,102,241,.08);
 border:1px solid rgba(99,102,241,.12);
@@ -4546,16 +4579,16 @@ max-width:100%;
 }
 
 .movement-user span{
-font-size:.68rem;
-font-weight:900;
+font-size:.75rem;
+font-weight:700;
 text-transform:uppercase;
 letter-spacing:.04em;
 color:#94a3b8;
 }
 
 .movement-user strong{
-font-size:.78rem;
-font-weight:900;
+font-size:.74rem;
+font-weight:800;
 color:#6366f1;
 white-space:nowrap;
 }
@@ -4578,4 +4611,57 @@ display:flex;
 align-items:center;
 gap:6px;
 opacity:.85;
+}
+
+.movement-origin{
+display:inline-flex;
+align-items:center;
+gap:7px;
+width:fit-content;
+max-width:100%;
+padding:6px 11px;
+border-radius:999px;
+font-size:.78rem;
+font-weight:900;
+border:1px solid transparent;
+}
+
+.movement-origin strong{
+font-weight:900;
+}
+
+.origin-order{
+background:rgba(14,165,233,.10);
+border-color:rgba(14,165,233,.18);
+color:#0ea5e9;
+}
+
+.origin-edit{
+background:rgba(139,92,246,.10);
+border-color:rgba(139,92,246,.18);
+color:#8b5cf6;
+}
+
+.origin-cancel{
+background:rgba(249,115,22,.12);
+border-color:rgba(249,115,22,.20);
+color:#f97316;
+}
+
+.origin-restock{
+background:rgba(16,185,129,.12);
+border-color:rgba(16,185,129,.20);
+color:#10b981;
+}
+
+.origin-adjust{
+background:rgba(245,158,11,.14);
+border-color:rgba(245,158,11,.22);
+color:#f59e0b;
+}
+
+.origin-manual{
+background:rgba(148,163,184,.12);
+border-color:rgba(148,163,184,.20);
+color:#94a3b8;
 }
