@@ -8150,6 +8150,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+
     // Vista Historial Inventario
     async function renderInventoryHistoryView(profile, activeBusiness) {
 
@@ -8258,7 +8259,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 businessId
             )
         );
+
+        document.querySelectorAll(".inventory-movement-card").forEach(card => {
+            card.addEventListener("click", () => {
+                const movementId = card.dataset.movementId;
+                const movement = inventoryMovementsCache.find(item => item.id === movementId);
+
+                if (movement) {
+                    openInventoryMovementModal(movement);
+                }
+            });
+        });
     }
+
+    let inventoryMovementsCache = [];
 
     //Cargar Historial Inventario
     async function loadInventoryHistory(
@@ -8327,6 +8341,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (error)
                 throw error;
+
+            inventoryMovementsCache = data || [];
 
             const filtered =
             (data || [])
@@ -8527,7 +8543,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         `;
 
         return `
-        <div class="inventory-movement-card">
+        <div class="inventory-movement-card" data-movement-id="${item.id}">
 
         <div class="inventory-movement-top">
 
@@ -8550,30 +8566,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         </p>
         </div>
 
-        <div class="movement-side-meta">
-        <div class="movement-origin ${originClass}">
-        <span>${getMovementOriginIcon(originLabel)}</span>
-        <strong>${originLabel}</strong>
-        </div>
-        </div>
-
-        <div class="inventory-movement-quantity ${movementClass}">
-        ${movementSign} ${item.quantity}
-        </div>
 
         </div>
 
         <div class="inventory-movement-footer">
         ${stockText}
 
-        <p class="movement-time">
-        <div class="movement-date">
-        ${formatDateTime(item.created_at)}
+        <div class="movement-meta-under-stock">
+        <div class="movement-origin ${originClass}">
+        <span>${getMovementOriginIcon(originLabel)}</span>
+        <strong>${originLabel}</strong>
         </div>
 
         <div class="movement-user movement-user-under-date">
         <span>👤</span>
         <span>${userName}</span>
+        </div>
+        </div>
+
+        <p class="movement-time">
+        <div class="movement-date">
+        ${formatDateTime(item.created_at)}
         </div>
 
         <div class="movement-relative-time">
@@ -8585,6 +8598,95 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         </div>
         `;
+    }
+
+    // Modal Historial de Movimientos
+    function openInventoryMovementModal(item) {
+        const isEntrada = item.movement_type === "entrada";
+        const isSalida = item.movement_type === "salida";
+
+        const movementLabel = isEntrada ? "Entrada": isSalida ? "Salida": "Ajuste";
+        const movementSign = isEntrada ? "+": isSalida ? "-": "±";
+
+        const originLabel = getMovementOriginLabel(item);
+        const userName = item.profiles?.full_name || "Usuario no disponible";
+
+        const productName = `${item.products?.brand || ""} ${item.products?.name || "Producto"}`.trim();
+        const presentation = item.products?.presentation || "—";
+
+        const stockBefore = item.stock_before ?? "—";
+        const stockAfter = item.stock_after ?? "—";
+
+        const modal = document.createElement("div");
+        modal.className = "inventory-detail-modal-backdrop";
+
+        modal.innerHTML = `
+        <div class="inventory-detail-modal">
+        <button class="inventory-detail-close" type="button">×</button>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400">Detalle de movimiento</p>
+
+        <h2>${productName}</h2>
+        <p class="inventory-detail-presentation">${presentation}</p>
+
+        <div class="inventory-detail-main ${isEntrada ? "movement-entry": isSalida ? "movement-sale": "movement-edit"}">
+        ${movementSign}${item.quantity}
+        </div>
+
+        <div class="inventory-detail-grid">
+        <div>
+        <span>Tipo</span>
+        <strong>${movementLabel}</strong>
+        </div>
+
+        <div>
+        <span>Stock</span>
+        <strong>${stockBefore} → ${stockAfter}</strong>
+        </div>
+
+        <div>
+        <span>Origen</span>
+        <strong>${originLabel}</strong>
+        </div>
+
+        <div>
+        <span>Usuario</span>
+        <strong>${userName}</strong>
+        </div>
+
+        <div>
+        <span>Fecha</span>
+        <strong>${formatDateTime(item.created_at)}</strong>
+        </div>
+
+        <div>
+        <span>Hace</span>
+        <strong>${getRelativeTime(item.created_at)}</strong>
+        </div>
+        </div>
+
+        ${item.notes ? `
+        <div class="inventory-detail-notes">
+        <span>Notas</span>
+        <p>${item.notes}</p>
+        </div>
+        `: ""}
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector(".inventory-detail-close").addEventListener("click",
+            () => {
+                modal.remove();
+            });
+
+        modal.addEventListener("click",
+            event => {
+                if (event.target === modal) {
+                    modal.remove();
+                }
+            });
     }
 
     // Etiqueta Origen Movimiento
