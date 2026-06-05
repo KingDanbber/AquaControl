@@ -4085,18 +4085,20 @@ box-shadow:0 16px 34px rgba(0,0,0,.25);
 
 .movement-side-meta{
 position:absolute;
-
-top:110px;   /* antes 86px */
+top:110px;
 right:18px;
 
 display:flex;
 flex-direction:column;
 align-items:flex-end;
+gap:12px;
 
-gap:14px;    /* antes 12px */
-
-max-width:170px;
+max-width:160px;
 z-index:2;
+}
+
+.movement-user-under-date{
+margin-top:8px;
 }
 
 .inventory-movement-top{
@@ -4566,16 +4568,23 @@ border-color:rgba(14,165,233,.16);
 }
 
 .movement-user{
-margin-top:8px;
-display:flex;
+display:inline-flex;
 align-items:center;
 gap:6px;
+
 padding:6px 10px;
 border-radius:999px;
+
 background:rgba(99,102,241,.08);
-border:1px solid rgba(99,102,241,.12);
+border:1px solid rgba(99,102,241,.14);
+
+font-size:.80rem;
+font-weight:800;
+color:#6366f1;
+opacity: .85;
+
 width:fit-content;
-max-width:100%;
+max-width:180px;
 }
 
 .movement-user span{
