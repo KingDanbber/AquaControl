@@ -8551,16 +8551,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
 
         <div class="movement-side-meta">
-
         <div class="movement-origin ${originClass}">
         <span>${getMovementOriginIcon(originLabel)}</span>
         <strong>${originLabel}</strong>
         </div>
-
-        <div class="movement-user">
-        <span>👤</span> <strong>${userName}</strong>
-        </div>
-
         </div>
 
         <div class="inventory-movement-quantity ${movementClass}">
@@ -8577,9 +8571,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         ${formatDateTime(item.created_at)}
         </div>
 
+        <div class="movement-user movement-user-under-date">
+        <span>👤</span>
+        <span>${userName}</span>
+        </div>
+
         <div class="movement-relative-time">
         ⏱ ${getRelativeTime(item.created_at)}
         </div>
+
         </p>
         </div>
 
