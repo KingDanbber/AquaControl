@@ -4683,6 +4683,10 @@ border-color:rgba(148,163,184,.20);
 color:#94a3b8;
 }
 
+/* ==========================
+   MODAL DETALLE MOVIMIENTO
+========================== */
+
 .inventory-detail-modal-backdrop{
 position:fixed;
 inset:0;
@@ -4692,55 +4696,56 @@ z-index:9999;
 display:flex;
 align-items:flex-end;
 justify-content:center;
-padding:16px;
+padding:12px;
 }
 
 .inventory-detail-modal{
 width:100%;
 max-width:460px;
+max-height:92vh;
+overflow-y:auto;
+
 background:rgba(255,255,255,.96);
-border-radius:32px 32px 24px 24px;
-padding:24px;
+border-radius:30px 30px 24px 24px;
+padding:22px;
 position:relative;
 box-shadow:0 24px 60px rgba(15,23,42,.28);
 }
 
-.dark .inventory-detail-modal{
-background:rgba(15,23,42,.96);
-}
-
 .inventory-detail-close{
 position:absolute;
-top:16px;
-right:18px;
-width:38px;
-height:38px;
+top:14px;
+right:14px;
+width:42px;
+height:42px;
 border-radius:999px;
 border:none;
 background:rgba(148,163,184,.18);
-font-size:1.5rem;
+font-size:1.45rem;
 font-weight:900;
+z-index:2;
 }
 
 .inventory-detail-modal h2{
-font-size:1.35rem;
+font-size:clamp(1.35rem, 6vw, 2rem);
 font-weight:950;
-line-height:1.15;
-margin-top:8px;
+line-height:1.1;
+padding-right:48px;
 }
 
 .inventory-detail-presentation{
-margin-top:4px;
+margin-top:6px;
 font-weight:800;
 color:#64748b;
+font-size:clamp(1rem, 4vw, 1.25rem);
 }
 
 .inventory-detail-main{
 margin-top:18px;
 width:100%;
 border-radius:24px;
-padding:16px;
-font-size:2rem;
+padding:18px;
+font-size:clamp(2rem, 12vw, 3rem);
 font-weight:950;
 text-align:center;
 }
@@ -4758,22 +4763,25 @@ border-radius:20px;
 padding:14px;
 background:rgba(14,165,233,.07);
 border:1px solid rgba(14,165,233,.10);
+min-width:0;
 }
 
 .inventory-detail-grid span,
 .inventory-detail-notes span{
 display:block;
-font-size:.7rem;
+font-size:.68rem;
 font-weight:900;
 text-transform:uppercase;
 letter-spacing:.04em;
 color:#94a3b8;
-margin-bottom:5px;
+margin-bottom:6px;
 }
 
 .inventory-detail-grid strong{
-font-size:.9rem;
+font-size:clamp(.88rem, 3.7vw, 1rem);
 font-weight:900;
+line-height:1.35;
+word-break:break-word;
 }
 
 .inventory-detail-notes{
@@ -4781,7 +4789,119 @@ margin-top:14px;
 }
 
 .inventory-detail-notes p{
-font-size:.9rem;
+font-size:clamp(.9rem, 3.8vw, 1rem);
 font-weight:700;
+line-height:1.45;
 color:#64748b;
+}
+
+/* Celulares angostos */
+@media(max-width:390px){
+.inventory-detail-modal-backdrop{
+padding:8px;
+}
+
+.inventory-detail-modal{
+max-height:94vh;
+padding:18px;
+border-radius:26px 26px 20px 20px;
+}
+
+.inventory-detail-grid{
+gap:10px;
+}
+
+.inventory-detail-grid div,
+.inventory-detail-notes{
+padding:12px;
+border-radius:18px;
+}
+
+.inventory-detail-close{
+width:38px;
+height:38px;
+font-size:1.3rem;
+}
+}
+
+/* Celulares muy angostos */
+@media(max-width:340px){
+.inventory-detail-grid{
+grid-template-columns:1fr;
+}
+
+.inventory-detail-main{
+padding:16px;
+}
+
+.inventory-detail-modal h2{
+padding-right:42px;
+}
+}
+
+/* =====================
+   CABECERA DEL MODAL
+===================== */
+
+.inventory-detail-header{
+display:flex;
+align-items:center;
+gap:16px;
+margin-bottom:20px;
+}
+
+.inventory-detail-title{
+flex:1;
+min-width:0;
+}
+
+.inventory-detail-title h2{
+margin:0;
+line-height:1.1;
+}
+
+.inventory-detail-product-image{
+width:90px;
+height:90px;
+
+object-fit:cover;
+
+border-radius:20px;
+
+background:#f1f5f9;
+
+border:1px solid rgba(148,163,184,.15);
+
+flex-shrink:0;
+}
+
+@media(max-width:380px){
+
+.inventory-detail-header{
+gap:12px;
+}
+
+.inventory-detail-product-image{
+width:72px;
+height:72px;
+border-radius:16px;
+}
+
+}
+
+.inventory-detail-order-btn{
+width:100%;
+margin-top:14px;
+border:none;
+border-radius:20px;
+padding:14px 16px;
+background:#0ea5e9;
+color:white;
+font-weight:900;
+font-size:.95rem;
+box-shadow:0 14px 28px rgba(14,165,233,.25);
+}
+
+.inventory-detail-order-btn:active{
+transform:scale(.98);
 }
