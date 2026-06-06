@@ -3460,7 +3460,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <button
         id="btn-edit-add-product"
         type="button"
-        class="w-full rounded-3xl border-2 border-dashed border-sky-400 bg-sky-50 dark:bg-slate-900 dark:border-sky-500 p-5 flex items-center justify-center gap-3 active:scale-[0.98]"
+        class="w-full rounded-3xl border-2 border-dashed border-sky-400 bg-sky-50 white:bg-slate-900 dark:border-sky-500 p-5 flex items-center justify-center gap-3 active:scale-[0.98]"
         >
         <span class="w-10 h-10 rounded-2xl bg-sky-500 text-white flex items-center justify-center text-2xl font-bold">
         +
@@ -8236,9 +8236,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             () => renderProductsView(profile, activeBusiness)
         );
 
-        await loadInventoryHistory(
-            businessId
-        );
+        await loadInventoryHistory(businessId, profile, activeBusiness);
 
         document
         .querySelector("#inventory-filter")
@@ -8246,7 +8244,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             "change",
             () =>
             loadInventoryHistory(
-                businessId
+                businessId, profile, activeBusiness
             )
         );
 
@@ -8256,7 +8254,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             "input",
             () =>
             loadInventoryHistory(
-                businessId
+                businessId, profile, activeBusiness
             )
         );
 
@@ -8266,7 +8264,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const movement = inventoryMovementsCache.find(item => item.id === movementId);
 
                 if (movement) {
-                    openInventoryMovementModal(movement);
+                    openInventoryMovementModal(movement, profile, activeBusiness);
                 }
             });
         });
@@ -8275,9 +8273,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let inventoryMovementsCache = [];
 
     //Cargar Historial Inventario
-    async function loadInventoryHistory(
-        businessId
-    ) {
+    async function loadInventoryHistory(businessId, profile, activeBusiness) {
 
         const container =
         document.querySelector(
@@ -8308,7 +8304,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 products (
                 name,
                 brand,
-                presentation
+                presentation,
+                image_url
                 ),
                 profiles (
                 full_name
@@ -8601,7 +8598,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Modal Historial de Movimientos
-    function openInventoryMovementModal(item) {
+    function openInventoryMovementModal(item,
+        profile,
+        activeBusiness) {
         const isEntrada = item.movement_type === "entrada";
         const isSalida = item.movement_type === "salida";
 
@@ -8609,6 +8608,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         const movementSign = isEntrada ? "+": isSalida ? "-": "±";
 
         const originLabel = getMovementOriginLabel(item);
+        
+        const canViewOrder =
+        item.reference_type === "order" &&
+        item.reference_id;
+
+
         const userName = item.profiles?.full_name || "Usuario no disponible";
 
         const productName = `${item.products?.brand || ""} ${item.products?.name || "Producto"}`.trim();
@@ -8626,8 +8631,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         <p class="text-sm text-slate-500 dark:text-slate-400">Detalle de movimiento</p>
 
+        <div class="inventory-detail-header">
+
+        ${
+        item.products?.image_url
+        ? `
+        <img
+        src="${getCloudinaryImage(item.products.image_url,
+            {
+                width: 300
+            })}"
+        class="inventory-detail-product-image"
+        alt="${productName}"
+        >
+        `: ""
+        }
+
+        <div class="inventory-detail-title">
         <h2>${productName}</h2>
-        <p class="inventory-detail-presentation">${presentation}</p>
+        <p class="inventory-detail-presentation">
+        ${presentation}
+        </p>
+        </div>
+
+        </div>
 
         <div class="inventory-detail-main ${isEntrada ? "movement-entry": isSalida ? "movement-sale": "movement-edit"}">
         ${movementSign}${item.quantity}
@@ -8671,6 +8698,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         <p>${item.notes}</p>
         </div>
         `: ""}
+
+        ${canViewOrder ? `
+        <button
+        type="button"
+        class="inventory-detail-order-btn"
+        data-order-id="${item.reference_id}"
+        >
+        Ver/Editar pedido
+        </button>
+        `: ""}
+
         </div>
         `;
 
@@ -8686,6 +8724,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (event.target === modal) {
                     modal.remove();
                 }
+            });
+
+        modal
+        .querySelector(".inventory-detail-order-btn")
+        ?.addEventListener("click",
+            () => {
+                modal.remove();
+
+                renderEditOrderForm(
+                    item.reference_id,
+                    profile,
+                    activeBusiness
+                );
             });
     }
 
