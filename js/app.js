@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <img
         src="./assets/logo-oasis-puro.png"
         alt="Oasis Puro Logo"
-        class="w-20 h-20 object-contain mb-3"
+        class="w-20 h-20 object-contain mb-3 "
         onerror="this.style.display='none'"
         />
 
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
 
         <p class="text-center text-xs text-slate-400 mt-6">
-        Oasis Puro · Versión inicial
+        Oasis Puro · Versión 25
         </p>
         </div>
         </section>
@@ -4204,6 +4204,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Función Vista Clientes
 
+    let clientsCache = [];
+    let currentClientSearch = "";
+
     async function renderClientsView(profile, activeBusiness) {
         const app = document.querySelector("#app");
 
@@ -4220,7 +4223,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <p class="text-sm text-slate-500 dark:text-slate-400">Módulo</p>
         <h1 class="text-2xl font-bold">Clientes</h1>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        Guarda nombre, WhatsApp y domicilio del cliente.
+        Administra tus clientes, WhatsApp y domicilios.
         </p>
         </div>
 
@@ -4232,14 +4235,51 @@ document.addEventListener("DOMContentLoaded", async () => {
         </button>
         </header>
 
-        <section id="clients-list" class="space-y-3">
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Cargando clientes...</p>
+        <section class="clients-kpi-grid">
+        <div class="client-kpi-card">
+        <div class="client-kpi-icon">👥</div>
+        <span>Total</span>
+        <strong id="clients-total-count">0</strong>
+        <small>clientes activos</small>
+        </div>
+
+        <div class="client-kpi-card">
+        <div class="client-kpi-icon">📱</div>
+        <span>WhatsApp</span>
+        <strong id="clients-whatsapp-count">0</strong>
+        <small>con número</small>
+        </div>
+
+        <div class="client-kpi-card">
+        <div class="client-kpi-icon">📍</div>
+        <span>Domicilio</span>
+        <strong id="clients-address-count">0</strong>
+        <small>registrados</small>
+        </div>
+        </section>
+
+        <section class="clients-history-card">
+        <h2>Directorio de clientes</h2>
+        <p>Busca, consulta o edita clientes registrados.</p>
+
+        <input
+        id="clients-search"
+        class="form-control clients-search"
+        placeholder="Buscar cliente..."
+        />
+
+        <div class="clients-results-count">
+        <span id="clients-results-count">0 clientes encontrados</span>
+        </div>
+
+        <div id="clients-list" class="clients-list">
+        <div class="client-empty-card">
+        Cargando clientes...
+        </div>
         </div>
         </section>
 
         ${renderBottomNav("more")}
-
         </div>
         </section>
         `;
@@ -4252,6 +4292,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         document.querySelector("#btn-new-client")?.addEventListener("click", () => {
             renderClientForm(profile, activeBusiness);
+        });
+
+        document.querySelector("#clients-search")?.addEventListener("input", event => {
+            currentClientSearch = event.target.value.trim().toLowerCase();
+            renderClientCards(profile, activeBusiness);
         });
 
         await loadClients(
@@ -4268,10 +4313,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!businessId) {
             container.innerHTML = `
-            <div class="aqua-card p-5">
-            <p class="text-sm text-red-500 font-semibold">
+            <div class="client-empty-card">
             No se encontró negocio activo.
-            </p>
             </div>
             `;
             return;
@@ -4292,73 +4335,123 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (error) {
             console.error(error);
             container.innerHTML = `
-            <div class="aqua-card p-5">
-            <p class="text-sm text-red-500 font-semibold">
+            <div class="client-empty-card">
             Error al cargar clientes.
-            </p>
             </div>
             `;
             return;
         }
 
-        if (!data || data.length === 0) {
+        clientsCache = data || [];
+
+        const totalClients = clientsCache.length;
+        const whatsappClients = clientsCache.filter(client => client.whatsapp).length;
+        const addressClients = clientsCache.filter(client => client.address).length;
+
+        document.querySelector("#clients-total-count").textContent = totalClients;
+        document.querySelector("#clients-whatsapp-count").textContent = whatsappClients;
+        document.querySelector("#clients-address-count").textContent = addressClients;
+
+        renderClientCards(profile, activeBusiness);
+    }
+    
+     // Cards Clientes
+    function renderClientCards(profile, activeBusiness) {
+        const container = document.querySelector("#clients-list");
+        const countLabel = document.querySelector("#clients-results-count");
+
+        if (!container) return;
+
+        let data = [...clientsCache];
+
+        if (currentClientSearch) {
+            data = data.filter(client => {
+                const text = `
+                ${client.name || ""}
+                ${client.whatsapp || ""}
+                ${client.address || ""}
+                `.toLowerCase();
+
+                return text.includes(currentClientSearch);
+            });
+        }
+
+        if (countLabel) {
+            countLabel.textContent = `${data.length} ${
+            data.length === 1 ? "cliente encontrado": "clientes encontrados"
+            }`;
+        }
+
+        if (!data.length) {
             container.innerHTML = `
-            <div class="aqua-card p-5 text-center">
-            <h2 class="text-lg font-bold">Sin clientes</h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Agrega tu primer cliente para usarlo en pedidos.
-            </p>
+            <div class="client-empty-card">
+            Sin clientes encontrados.
             </div>
             `;
             return;
         }
 
         container.innerHTML = data.map(client => `
-            <article class="aqua-card p-5">
-            <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-            <p class="text-xs uppercase tracking-wide text-sky-600 dark:text-sky-400 font-bold">
-            Cliente
-            </p>
+            <article class="client-card" data-client-id="${client.id}">
+            <div class="client-avatar">
+            ${getClientInitials(client.name)}
+            </div>
 
-            <h2 class="text-xl font-bold mt-1">
-            ${client.name}
-            </h2>
-
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">
-            WhatsApp: ${client.whatsapp || "—"}
-            </p>
-
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-            Domicilio: ${client.address || "—"}
-            </p>
+            <div class="client-card-content">
+            <div class="client-card-top">
+            <div>
+            <p class="client-card-label">Cliente</p>
+            <h3>${client.name || "Sin nombre"}</h3>
             </div>
 
             <button
             type="button"
-            class="btn-edit-client icon-action-button"
+            class="btn-edit-client client-edit-btn"
             data-client-id="${client.id}"
-            data-client-name="${client.name || ""}"
-            data-client-whatsapp="${client.whatsapp || ""}"
-            data-client-address="${client.address || ""}"
             >
-            <img src="./assets/icons/edit-client.svg" alt="Editar">
+            ✏️
             </button>
+            </div>
+
+            <div class="client-card-meta">
+            <span>📱 ${client.whatsapp || "Sin WhatsApp"}</span>
+            <span>📍 ${client.address || "Sin domicilio"}</span>
+            </div>
             </div>
             </article>
             `).join("");
 
         document.querySelectorAll(".btn-edit-client").forEach(button => {
-            button.addEventListener("click", () => {
+            button.addEventListener("click", event => {
+                event.stopPropagation();
+
+                const client = clientsCache.find(
+                    item => String(item.id) === String(button.dataset.clientId)
+                );
+
+                if (!client) return;
+
                 renderClientForm(profile, activeBusiness, {
-                    id: button.dataset.clientId,
-                    name: button.dataset.clientName,
-                    whatsapp: button.dataset.clientWhatsapp,
-                    address: button.dataset.clientAddress
+                    id: client.id,
+                    name: client.name || "",
+                    whatsapp: client.whatsapp || "",
+                    address: client.address || ""
                 });
             });
         });
     }
+    
+    // Helper Clientes
+    function getClientInitials(name = "") {
+    const words = name.trim().split(" ").filter(Boolean);
+
+    if (!words.length) return "CL";
+
+    return words
+        .slice(0, 2)
+        .map(word => word[0].toUpperCase())
+        .join("");
+}
 
     // Formulario Nuevo Cliente
 
@@ -4787,12 +4880,81 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
         </section>
 
+        <section class="expenses-chart-card">
+        <div class="expenses-chart-header">
+        <div>
+        <h3>Gastos últimos 7 días</h3>
+        <p>Resumen rápido por día</p>
+        </div>
+        </div>
+
+        <div id="expenses-week-chart" class="expenses-week-chart"></div>
+        </section>
+
+        <section class="expenses-chart-card">
+        <div class="expenses-chart-header">
+        <div>
+        <h3>Gastos últimos 7 meses</h3>
+        <p>Comparativa mensual</p>
+        </div>
+        </div>
+
+        <div id="expenses-month-chart" class="expenses-month-chart"></div>
+        </section>
+
+        <section class="expense-categories-card">
+        <div class="expense-categories-header">
+        <h3>Top categorías</h3>
+        <p>Distribución de gastos registrados</p>
+        </div>
+
+        <div id="expense-categories-chart"></div>
+        </section>
+
         <section class="aqua-card expenses-list-section p-5">
         <div class="expenses-list-header">
         <div>
         <h2>Historial de gastos</h2>
         <p>Consulta los gastos registrados del negocio.</p>
         </div>
+        </div>
+
+        <div class="expenses-filters">
+        <button class="expense-filter-btn active" data-expense-filter="all">
+        Todos
+        </button>
+
+        <button class="expense-filter-btn" data-expense-filter="today">
+        Hoy
+        </button>
+
+        <button class="expense-filter-btn" data-expense-filter="week">
+        Semana
+        </button>
+
+        <button class="expense-filter-btn" data-expense-filter="month">
+        Mes
+        </button>
+        </div>
+
+        <input
+        id="expenses-search"
+        class="form-control expenses-search"
+        placeholder="Buscar gasto..."
+        />
+
+        <select
+        id="expenses-sort"
+        class="expense-sort-select"
+        >
+        <option value="recent">Más recientes</option>
+        <option value="oldest">Más antiguos</option>
+        <option value="amount-desc">Mayor monto</option>
+        <option value="amount-asc">Menor monto</option>
+        </select>
+
+        <div class="expenses-results-count">
+        <span id="expenses-results-count">0 gastos encontrados</span>
         </div>
 
         <div id="expenses-list" class="expenses-list">
@@ -4820,21 +4982,24 @@ document.addEventListener("DOMContentLoaded", async () => {
             await downloadExpensesPDF(profile, activeBusiness);
         });
 
-        await loadExpenses(activeBusiness?.businesses?.id);
+        await loadExpenses(activeBusiness?.businesses?.id, profile, activeBusiness);
     }
 
     // Cargar Gastos
 
-    async function loadExpenses(businessId) {
+    let expensesCache = [];
+    let currentExpenseFilter = "all";
+    let currentExpenseSearch = "";
+    let currentExpenseSort = "recent";
+
+    async function loadExpenses(businessId, profile, activeBusiness) {
         const container = document.querySelector("#expenses-list");
 
         if (!businessId) {
             container.innerHTML = `
-            <tr>
-            <td colspan="7" class="text-center text-red-500 font-semibold">
+            <div class="expense-empty-card">
             No se encontró negocio activo.
-            </td>
-            </tr>
+            </div>
             `;
             return;
         }
@@ -4866,21 +5031,46 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (error) {
             console.error(error);
+
             container.innerHTML = `
-            <tr>
-            <td colspan="7" class="text-center text-red-500 font-semibold">
+            <div class="expense-empty-card">
             Error al cargar gastos.
-            </td>
-            </tr>
+            </div>
             `;
             return;
         }
 
-        if (!data || data.length === 0) {
-            document.querySelector("#expenses-today-count").textContent = "0";
-            document.querySelector("#expenses-month-total").textContent = formatCurrency(0);
-            document.querySelector("#expenses-total").textContent = formatCurrency(0);
+        expensesCache = data || [];
 
+        const today = new Date().toISOString().slice(0, 10);
+        const currentMonth = new Date().toISOString().slice(0, 7);
+
+        const expensesToday = expensesCache.filter(expense =>
+            expense.created_at?.slice(0, 10) === today
+        );
+
+        const totalAmount = expensesCache.reduce((sum, expense) => {
+            return sum + Number(expense.total_amount || 0);
+        }, 0);
+
+        const monthAmount = expensesCache
+        .filter(expense =>
+            expense.created_at?.slice(0, 7) === currentMonth
+        )
+        .reduce((sum, expense) => {
+            return sum + Number(expense.total_amount || 0);
+        }, 0);
+
+        document.querySelector("#expenses-today-count").textContent =
+        expensesToday.length;
+
+        document.querySelector("#expenses-month-total").textContent =
+        formatCurrency(monthAmount);
+
+        document.querySelector("#expenses-total").textContent =
+        formatCurrency(totalAmount);
+
+        if (!expensesCache.length) {
             container.innerHTML = `
             <div class="expense-empty-card">
             Sin gastos registrados.
@@ -4889,26 +5079,313 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        renderExpensesWeekChart(expensesCache);
+
+        renderExpensesMonthChart(expensesCache);
+
+        renderExpenseCategoriesChart(expensesCache);
+
+        renderExpensesCards(profile, activeBusiness);
+
+        if (!window.expenseFiltersInitialized) {
+            bindExpenseFilters(profile, activeBusiness);
+            window.expenseFiltersInitialized = true;
+        }
+    }
+
+    // Top Gastos
+    function renderExpenseCategoriesChart(expenses = []) {
+
+        const container = document.querySelector(
+            "#expense-categories-chart"
+        );
+
+        if (!container) return;
+
+        if (!expenses.length) {
+            container.innerHTML = `
+            <div class="expense-empty-card">
+            Sin información disponible
+            </div>
+            `;
+            return;
+        }
+
+        const categories = {};
+
+        expenses.forEach(expense => {
+
+            const category =
+            expense.category || "General";
+
+            const amount =
+            Number(expense.total_amount || 0);
+
+            categories[category] =
+            (categories[category] || 0) + amount;
+        });
+
+        const totalExpenses =
+        Object.values(categories)
+        .reduce((a, b) => a + b, 0);
+
+        const sortedCategories =
+        Object.entries(categories)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+        container.innerHTML =
+        sortedCategories.map(([category, total]) => {
+
+            const percentage =
+            ((total / totalExpenses) * 100)
+            .toFixed(0);
+
+            return `
+            <div class="expense-category-row">
+
+            <div class="expense-category-info">
+            <span>
+            ${getExpenseCategoryIcon(category)}
+            ${category}
+            </span>
+
+            <strong>
+            ${formatCurrency(total)}
+            </strong>
+            </div>
+
+            <div class="expense-category-bar">
+            <div
+            class="expense-category-fill"
+            style="width:${percentage}%"
+            ></div>
+            </div>
+
+            <small>${percentage}%</small>
+
+            </div>
+            `;
+        }).join("");
+    }
+
+    // Graáfica Visual Gastos 7 meses
+    function renderExpensesMonthChart(expenses = []) {
+        const container = document.querySelector("#expenses-month-chart");
+        if (!container) return;
+
+        const months = [];
+
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setMonth(date.getMonth() - i);
+
+            const key = date.toISOString().slice(0, 7);
+
+            const label = new Intl.DateTimeFormat("es-MX", {
+                month: "short"
+            }).format(date).replace(".", "");
+
+            const total = expenses
+            .filter(expense => expense.created_at?.slice(0, 7) === key)
+            .reduce((sum, expense) => {
+                return sum + Number(expense.total_amount || 0);
+            }, 0);
+
+            months.push({
+                label, total
+            });
+        }
+
+        const maxTotal = Math.max(...months.map(month => month.total), 1);
+
+        container.innerHTML = months.map(month => {
+            const height = Math.max(
+                (month.total / maxTotal) * 100,
+                month.total > 0 ? 12: 4
+            );
+
+            return `
+            <div class="expense-bar-item">
+            <div class="expense-bar-track month-track">
+            <div
+            class="expense-bar-fill month-fill"
+            style="height:${height}%"
+            ></div>
+            </div>
+
+            <strong>${formatCurrency(month.total)}</strong>
+            <span>${month.label}</span>
+            </div>
+            `;
+        }).join("");
+    }
+
+    // Grafica Visual Gastos 7 dias
+    function renderExpensesWeekChart(expenses = []) {
+        const container = document.querySelector("#expenses-week-chart");
+        if (!container) return;
+
+        const days = [];
+
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+
+            const key = date.toISOString().slice(0, 10);
+
+            const label = new Intl.DateTimeFormat("es-MX", {
+                weekday: "short"
+            }).format(date).replace(".", "");
+
+            const total = expenses
+            .filter(expense => expense.created_at?.slice(0, 10) === key)
+            .reduce((sum, expense) => {
+                return sum + Number(expense.total_amount || 0);
+            }, 0);
+
+            days.push({
+                label,
+                total
+            });
+        }
+
+        const maxTotal = Math.max(...days.map(day => day.total), 1);
+
+        container.innerHTML = days.map(day => {
+            const height = Math.max((day.total / maxTotal) * 100, day.total > 0 ? 12: 4);
+
+            return `
+            <div class="expense-bar-item">
+            <div class="expense-bar-track">
+            <div
+            class="expense-bar-fill"
+            style="height:${height}%"
+            ></div>
+            </div>
+
+            <strong>${formatCurrency(day.total)}</strong>
+            <span>${day.label}</span>
+            </div>
+            `;
+        }).join("");
+    }
+
+    // Badge Visuales Cards Gastos
+    function getExpenseCategoryClass(category = "") {
+        const value = category.toLowerCase();
+
+        if (value.includes("tapa")) return "expense-category-supplies";
+        if (value.includes("gasolina") || value.includes("combustible")) return "expense-category-fuel";
+        if (value.includes("servicio")) return "expense-category-service";
+        if (value.includes("mantenimiento")) return "expense-category-maintenance";
+        if (value.includes("transporte") || value.includes("flete")) return "expense-category-transport";
+        if (value.includes("agua")) return "expense-category-water";
+        if (value.includes("hielo")) return "expense-category-ice";
+
+        return "expense-category-general";
+    }
+
+    // Filtros Gastos
+    function getFilteredExpenses() {
+        let result = [...expensesCache];
+
         const today = new Date().toISOString().slice(0, 10);
         const currentMonth = new Date().toISOString().slice(0, 7);
 
-        const expensesToday = data.filter(expense => {
-            return expense.created_at?.slice(0, 10) === today;
-        });
+        const now = new Date();
+        const weekAgo = new Date();
+        weekAgo.setDate(now.getDate() - 7);
 
-        const totalAmount = data.reduce((sum, expense) => {
-            return sum + Number(expense.total_amount || 0);
-        }, 0);
+        if (currentExpenseFilter === "today") {
+            result = result.filter(expense =>
+                expense.created_at?.slice(0, 10) === today
+            );
+        }
 
-        const monthAmount = data
-        .filter(expense => expense.created_at?.slice(0, 7) === currentMonth)
-        .reduce((sum, expense) => {
-            return sum + Number(expense.total_amount || 0);
-        }, 0);
+        if (currentExpenseFilter === "week") {
+            result = result.filter(expense => {
+                const date = new Date(expense.created_at);
+                return date >= weekAgo && date <= now;
+            });
+        }
 
-        document.querySelector("#expenses-today-count").textContent = expensesToday.length;
-        document.querySelector("#expenses-month-total").textContent = formatCurrency(monthAmount);
-        document.querySelector("#expenses-total").textContent = formatCurrency(totalAmount);
+        if (currentExpenseFilter === "month") {
+            result = result.filter(expense =>
+                expense.created_at?.slice(0, 7) === currentMonth
+            );
+        }
+
+        if (currentExpenseSearch) {
+            result = result.filter(expense => {
+                const text = `
+                ${expense.expense_number || ""}
+                ${expense.category || ""}
+                ${expense.total_amount || ""}
+                ${expense.notes || ""}
+                ${expense.profiles?.full_name || ""}
+                ${(expense.expense_items || [])
+                .map(item => `${item.concept} ${item.quantity}`)
+                .join(" ")}
+                `.toLowerCase();
+
+                return text.includes(currentExpenseSearch);
+            });
+        }
+
+        switch (currentExpenseSort) {
+
+            case "recent":
+                result.sort((a, b)=>
+                    new Date(b.created_at)-new Date(a.created_at)
+                );
+                break;
+
+            case "oldest":
+                result.sort((a, b)=>
+                    new Date(a.created_at)-new Date(b.created_at)
+                );
+                break;
+
+            case "amount-desc":
+                result.sort((a, b)=>
+                    Number(b.total_amount)-Number(a.total_amount)
+                );
+                break;
+
+            case "amount-asc":
+                result.sort((a, b)=>
+                    Number(a.total_amount)-Number(b.total_amount)
+                );
+                break;
+
+        }
+
+        return result;
+    }
+
+    // Pintado Filtros Gastos
+    function renderExpensesCards(profile, activeBusiness) {
+        const container = document.querySelector("#expenses-list");
+        const data = getFilteredExpenses();
+        const countLabel = document.querySelector("#expenses-results-count");
+
+        if (countLabel) {
+            countLabel.textContent = `${data.length} ${
+            data.length === 1 ? "gasto encontrado": "gastos encontrados"
+            }`;
+        }
+
+        if (!container) return;
+
+        if (!data.length) {
+            container.innerHTML = `
+            <div class="expense-empty-card">
+            Sin gastos para este filtro.
+            </div>
+            `;
+            return;
+        }
 
         container.innerHTML = data.map(expense => {
             const conceptsText = expense.expense_items?.length
@@ -4917,10 +5394,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             .join(", "): "Sin conceptos";
 
             const categoryLabel = expense.category || "General";
-            const categoryIcon = getExpenseCategoryIcon(categoryLabel);
+
+            const categoryIcon =
+            getExpenseCategoryIcon(categoryLabel);
+
+            const categoryClass =
+            getExpenseCategoryClass(categoryLabel);
 
             return `
-            <article class="expense-card">
+            <article class="expense-card" data-expense-id="${expense.id}">
             <div class="expense-card-icon">
             ${categoryIcon}
             </div>
@@ -4928,7 +5410,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             <div class="expense-card-content">
             <div class="expense-card-top">
             <div>
-            <p class="expense-card-category">${categoryLabel}</p>
+            <span class="expense-category-badge ${categoryClass}">
+            ${categoryIcon} ${categoryLabel}
+            </span>
             <h3>#${String(expense.expense_number).padStart(4, "0")}</h3>
             </div>
 
@@ -4954,24 +5438,528 @@ document.addEventListener("DOMContentLoaded", async () => {
             </div>
             </article>
             `;
-        }).join("");
+    }).join("");
+
+    document.querySelectorAll(".expense-card").forEach(card => {
+        card.addEventListener("click", () => {
+            const expenseId = card.dataset.expenseId;
+
+            const expense = expensesCache.find(
+                item => String(item.id) === String(expenseId)
+            );
+
+            if (expense) {
+                openExpenseDetailModal(expense, profile, activeBusiness);
+            }
+        });
+    });
+}
+
+    // Helper Gastos
+    function bindExpenseFilters(profile, activeBusiness) {
+        document.querySelectorAll(".expense-filter-btn").forEach(button => {
+            button.addEventListener("click",
+                () => {
+                    document.querySelectorAll(".expense-filter-btn")
+                    .forEach(btn => btn.classList.remove("active"));
+
+                    button.classList.add("active");
+
+                    currentExpenseFilter = button.dataset.expenseFilter;
+                    renderExpensesCards(profile, activeBusiness);
+                });
+        });
+
+        document.querySelector("#expenses-search")?.addEventListener("input", event => {
+            currentExpenseSearch = event.target.value.trim().toLowerCase();
+            renderExpensesCards(profile,
+                activeBusiness);
+        });
+
+        document.querySelector("#expenses-sort")
+        ?.addEventListener("change", event => {
+
+            currentExpenseSort = event.target.value;
+
+            renderExpensesCards(
+                profile,
+                activeBusiness
+            );
+
+        });
     }
-    
+
+    // Modal Detalle Gasto
+    function openExpenseDetailModal(expense, profile, activeBusiness) {
+        const conceptsText = expense.expense_items?.length
+        ? expense.expense_items
+        .map(item => `• ${item.concept} x${item.quantity}`)
+        .join("<br>"): "Sin conceptos";
+
+        const userName = expense.profiles?.full_name || "Usuario no disponible";
+        const category = expense.category || "General";
+        const notes = expense.notes || "Sin notas";
+
+        const modal = document.createElement("div");
+        modal.className = "expense-detail-modal-backdrop";
+
+        modal.innerHTML = `
+        <div class="expense-detail-modal">
+        <button class="expense-detail-close" type="button">×</button>
+
+        <p class="expense-detail-label">Detalle de gasto</p>
+
+        <div class="expense-detail-header">
+        <div class="expense-detail-icon">
+        ${getExpenseCategoryIcon(category)}
+        </div>
+
+        <div>
+        <h2>Gasto #${String(expense.expense_number).padStart(4, "0")}</h2>
+        <p>${category}</p>
+        </div>
+        </div>
+
+        <div class="expense-detail-total">
+        ${formatCurrency(expense.total_amount)}
+        </div>
+
+        <div class="expense-detail-grid">
+        <div>
+        <span>Categoría</span>
+        <strong>${category}</strong>
+        </div>
+
+        <div>
+        <span>Usuario</span>
+        <strong>${userName}</strong>
+        </div>
+
+        <div>
+        <span>Fecha</span>
+        <strong>${formatDate(expense.created_at)}</strong>
+        </div>
+
+        <div>
+        <span>Total</span>
+        <strong>${formatCurrency(expense.total_amount)}</strong>
+        </div>
+        </div>
+
+        <div class="expense-detail-box">
+        <span>Conceptos</span>
+        <p>${conceptsText}</p>
+        </div>
+
+        <div class="expense-detail-box">
+        <span>Notas</span>
+        <p>${notes}</p>
+        </div>
+
+        <div class="expense-detail-actions">
+        <button type="button" class="expense-detail-edit">
+        Editar gasto
+        </button>
+
+        <button type="button" class="expense-detail-delete">
+        Eliminar
+        </button>
+        </div>
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector(".expense-detail-close")
+        ?.addEventListener("click", () => modal.remove());
+
+        modal.addEventListener("click", event => {
+            if (event.target === modal) {
+                modal.remove();
+            }
+        });
+
+        modal.querySelector(".expense-detail-edit")
+        ?.addEventListener("click",
+            () => {
+                modal.remove();
+                renderEditExpenseForm(expense.id, profile, activeBusiness);
+            });
+
+        modal.querySelector(".expense-detail-delete")
+        ?.addEventListener("click",
+            async () => {
+                showDeleteExpenseModal(
+                    expense,
+                    async () => {
+
+                        await deleteExpense(
+                            expense.id,
+                            profile,
+                            activeBusiness
+                        );
+
+                        modal.remove();
+                    }
+                );
+            });
+    }
+
+    // Editar Gasto Modal Detalle Gasto
+    async function renderEditExpenseForm(expenseId,
+        profile,
+        activeBusiness) {
+        const app = document.querySelector("#app");
+        const businessId = activeBusiness?.businesses?.id;
+
+        if (!expenseId || !businessId) {
+            showToast("No se encontró el gasto.", "error");
+            return;
+        }
+
+        const {
+            data: expense,
+            error
+        } = await supabaseClient
+        .from("expenses")
+        .select(`
+            id,
+            expense_number,
+            category,
+            total_amount,
+            notes,
+            created_at,
+            expense_items (
+            id,
+            concept,
+            quantity,
+            unit_cost
+            )
+            `)
+        .eq("id", expenseId)
+        .eq("business_id", businessId)
+        .single();
+
+        if (error || !expense) {
+            console.error(error);
+            showToast("No se pudo cargar el gasto.", "error");
+            return;
+        }
+
+        const firstItem = expense.expense_items?.[0] || {};
+
+        app.innerHTML = `
+        <section class="has-bottom-nav min-h-screen bg-transparent px-4 py-6">
+        <div class="max-w-2xl mx-auto space-y-4">
+
+        <form id="edit-expense-form" class="aqua-card p-5 space-y-4">
+
+        <button
+        type="button"
+        id="back-expenses"
+        class="history-back-btn"
+        >
+        ← Volver a gastos
+        </button>
+
+        <div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+        Editar gasto
+        </p>
+
+        <h1 class="text-3xl font-black">
+        Gasto #${String(expense.expense_number).padStart(4, "0")}
+        </h1>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Actualiza categoría, concepto, monto o notas.
+        </p>
+        </div>
+
+        <label class="block">
+        <span class="form-label">Categoría</span>
+        <input
+        id="edit-expense-category"
+        class="form-control"
+        value="${expense.category || ""}"
+        placeholder="Tapas, gasolina, insumos..."
+        >
+        </label>
+
+        <label class="block">
+        <span class="form-label">Concepto</span>
+        <input
+        id="edit-expense-concept"
+        class="form-control"
+        value="${firstItem.concept || ""}"
+        placeholder="Tapas desechables"
+        >
+        </label>
+
+        <div class="form-grid form-grid-2">
+        <label class="block">
+        <span class="form-label">Cantidad</span>
+        <input
+        id="edit-expense-quantity"
+        type="number"
+        min="1"
+        step="1"
+        class="form-control"
+        value="${firstItem.quantity || 1}"
+        >
+        </label>
+
+        <label class="block">
+        <span class="form-label">Costo unitario</span>
+        <input
+        id="edit-expense-unit-cost"
+        type="number"
+        min="0"
+        step="0.01"
+        class="form-control"
+        value="${firstItem.unit_cost || expense.total_amount || 0}"
+        >
+        </label>
+        </div>
+
+        <label class="block">
+        <span class="form-label">Fecha</span>
+        <input
+        id="edit-expense-created-at"
+        type="datetime-local"
+        class="form-control"
+        value="${toDatetimeLocalValue(expense.created_at)}"
+        >
+        </label>
+
+        <label class="block">
+        <span class="form-label">Notas</span>
+        <textarea
+        id="edit-expense-notes"
+        class="form-control"
+        rows="3"
+        placeholder="Notas del gasto..."
+        >${expense.notes || ""}</textarea>
+        </label>
+
+        <div class="rounded-2xl bg-sky-50 blue:bg-slate-900/60 p-4 border border-sky-100 dark:border-slate-800">
+        <p class="text-sm text-slate-500 font-bold">Total calculado</p>
+        <p id="edit-expense-total-preview" class="text-2xl font-black">
+        ${formatCurrency(expense.total_amount)}
+        </p>
+        </div>
+
+        <button
+        id="btn-update-expense"
+        type="submit"
+        class="w-full bg-sky-600 hover:bg-sky-500 text-white rounded-2xl py-3 font-semibold"
+        >
+        Guardar cambios
+        </button>
+
+        </form>
+
+        ${renderBottomNav("expenses")}
+        </div>
+        </section>
+        `;
+
+        bindBottomNav(profile, activeBusiness);
+
+        document.querySelector("#back-expenses")?.addEventListener("click", () => {
+            renderExpensesView(profile, activeBusiness);
+        });
+
+        const quantityInput = document.querySelector("#edit-expense-quantity");
+        const unitCostInput = document.querySelector("#edit-expense-unit-cost");
+        const totalPreview = document.querySelector("#edit-expense-total-preview");
+
+        function updatePreview() {
+            const quantity = Number(quantityInput.value) || 0;
+            const unitCost = Number(unitCostInput.value) || 0;
+            totalPreview.textContent = formatCurrency(quantity * unitCost);
+        }
+
+        quantityInput.addEventListener("input", updatePreview);
+        unitCostInput.addEventListener("input", updatePreview);
+
+        document.querySelector("#edit-expense-form")?.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const button = document.querySelector("#btn-update-expense");
+
+            const category = document.querySelector("#edit-expense-category").value.trim();
+            const concept = document.querySelector("#edit-expense-concept").value.trim();
+            const quantity = Number(document.querySelector("#edit-expense-quantity").value) || 0;
+            const unitCost = Number(document.querySelector("#edit-expense-unit-cost").value) || 0;
+            const totalAmount = quantity * unitCost;
+            const notes = document.querySelector("#edit-expense-notes").value.trim();
+            const createdAtValue = document.querySelector("#edit-expense-created-at").value;
+
+            if (!category || !concept || quantity <= 0 || unitCost < 0) {
+                showToast("Revisa categoría, concepto, cantidad y costo.", "warning");
+                return;
+            }
+
+            try {
+                setButtonLoading(button, true, "Guardando...");
+
+                const {
+                    error: expenseError
+                } = await supabaseClient
+                .from("expenses")
+                .update({
+                    category,
+                    total_amount: totalAmount,
+                    notes,
+                    created_at: createdAtValue
+                    ? new Date(createdAtValue).toISOString(): expense.created_at
+                })
+                .eq("id", expenseId)
+                .eq("business_id", businessId);
+
+                if (expenseError) throw expenseError;
+
+                if (firstItem.id) {
+                    const {
+                        error: itemError
+                    } = await supabaseClient
+                    .from("expense_items")
+                    .update({
+                        concept,
+                        quantity,
+                        unit_cost: unitCost
+                    })
+                    .eq("id", firstItem.id);
+
+                    if (itemError) throw itemError;
+                }
+
+                showToast("Gasto actualizado correctamente.", "success");
+                renderExpensesView(profile, activeBusiness);
+
+            } catch (error) {
+                console.error(error);
+                showToast(error.message || "No se pudo actualizar el gasto.", "error");
+            } finally {
+                setButtonLoading(button, false);
+            }
+        });
+    }
+
+    // Eliminar Gasto Modal Detalle Gasto
+    async function deleteExpense(expenseId,
+        profile,
+        activeBusiness) {
+        try {
+            const {
+                error
+            } = await supabaseClient
+            .from("expenses")
+            .delete()
+            .eq("id",
+                expenseId);
+
+            if (error) throw error;
+
+            showToast("Gasto eliminado correctamente.", "success");
+            renderExpensesView(profile, activeBusiness);
+
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "No se pudo eliminar el gasto.", "error");
+        }
+    }
+
+    // Mensaje Eliminar Gastó
+    function showDeleteExpenseModal(expense, onConfirm) {
+        const modal = document.createElement("div");
+
+        modal.className = `
+        fixed inset-0 z-[9999]
+        bg-black/50
+        flex items-center justify-center
+        p-4
+        `;
+
+        modal.innerHTML = `
+        <div class="delete-expense-modal">
+
+        <div class="delete-expense-icon">
+        🗑️
+        </div>
+
+        <h3 class="delete-expense-title">
+        Eliminar gasto
+        </h3>
+
+        <p class="delete-expense-text">
+        ¿Deseas eliminar el gasto
+        <strong>#${String(expense.expense_number).padStart(4, "0")}</strong>?
+        Esta acción no se puede deshacer.
+        </p>
+
+        <div class="delete-expense-actions">
+        <button
+        id="cancel-delete-expense"
+        class="delete-expense-cancel"
+        >
+        Cancelar
+        </button>
+
+        <button
+        id="confirm-delete-expense"
+        class="delete-expense-confirm"
+        >
+        Eliminar
+        </button>
+        </div>
+
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document
+        .querySelector("#cancel-delete-expense")
+        .addEventListener("click", () => {
+            modal.remove();
+        });
+
+        document
+        .querySelector("#confirm-delete-expense")
+        .addEventListener("click", () => {
+            modal.remove();
+            onConfirm();
+        });
+    }
+
+    // Helper Tiempo Modal Detalle Gasto
+    function toDatetimeLocalValue(dateValue) {
+        if (!dateValue) return "";
+
+        const date = new Date(dateValue);
+        const offset = date.getTimezoneOffset();
+        const localDate = new Date(date.getTime() - offset * 60000);
+
+        return localDate.toISOString().slice(0, 16);
+    }
+
     //Iconos Categoría Gastos
     function getExpenseCategoryIcon(category = "") {
-    const value = category.toLowerCase();
+        const value = category.toLowerCase();
 
-    if (value.includes("gasolina") || value.includes("combustible")) return "⛽";
-    if (value.includes("agua")) return "💧";
-    if (value.includes("hielo")) return "🧊";
-    if (value.includes("transporte") || value.includes("flete")) return "🚚";
-    if (value.includes("servicio")) return "🧾";
-    if (value.includes("mantenimiento")) return "🔧";
-    if (value.includes("oficina")) return "🏢";
-    if (value.includes("insumo") || value.includes("material")) return "📦";
+        if (value.includes("gasolina") || value.includes("combustible")) return "⛽";
+        if (value.includes("agua")) return "💧";
+        if (value.includes("hielo")) return "🧊";
+        if (value.includes("transporte") || value.includes("flete")) return "🚚";
+        if (value.includes("servicio")) return "🧾";
+        if (value.includes("mantenimiento")) return "🔧";
+        if (value.includes("oficina")) return "🏢";
+        if (value.includes("insumo") || value.includes("material")) return "📦";
 
-    return "💸";
-}
+        return "💸";
+    }
 
     // Vista Agregar Nuevo Gasto
 
