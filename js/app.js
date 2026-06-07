@@ -4764,51 +4764,41 @@ document.addEventListener("DOMContentLoaded", async () => {
         </button>
         </header>
 
-        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Gastos hoy</p>
-        <h2 id="expenses-today-count" class="text-2xl font-bold mt-1">0</h2>
+        <section class="expenses-kpi-grid home-style-kpis">
+        <div class="expense-kpi-card expense-kpi-today transition: all .25s ease;">
+        <div class="expense-kpi-icon">🧾</div>
+        <span>Hoy</span>
+        <strong id="expenses-today-count">0</strong>
+        <small>gastos</small>
         </div>
 
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Total gastos</p>
-        <h2 id="expenses-total-amount" class="text-2xl font-bold mt-1">$0.00</h2>
+        <div class="expense-kpi-card expense-kpi-month transition: all .25s ease;">
+        <div class="expense-kpi-icon">📆</div>
+        <span>Este mes</span>
+        <strong id="expenses-month-total">$0.00</strong>
+        <small>total mensual</small>
         </div>
 
-        <div class="aqua-card p-5">
-        <p class="text-sm text-slate-500 dark:text-slate-400">Este mes</p>
-        <h2 id="expenses-month-amount" class="text-2xl font-bold mt-1">$0.00</h2>
+        <div class="expense-kpi-card expense-kpi-total transition: all .25s ease;">
+        <div class="expense-kpi-icon">💸</div>
+        <span>Total</span>
+        <strong id="expenses-total">$0.00</strong>
+        <small>histórico</small>
         </div>
         </section>
 
-        <section class="aqua-card p-5">
-        <h2 class="text-lg font-bold mb-2">Tabla de gastos</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
-        Aquí aparecerán los gastos registrados.
-        </p>
+        <section class="aqua-card expenses-list-section p-5">
+        <div class="expenses-list-header">
+        <div>
+        <h2>Historial de gastos</h2>
+        <p>Consulta los gastos registrados del negocio.</p>
+        </div>
+        </div>
 
-        <div class="aqua-table-wrapper">
-        <table class="aqua-table">
-        <thead>
-        <tr>
-        <th># Gasto</th>
-        <th>Fecha</th>
-        <th>Admin/Vendedor</th>
-        <th>Categoría</th>
-        <th>Conceptos</th>
-        <th>Total</th>
-        <th>Notas</th>
-        </tr>
-        </thead>
-
-        <tbody id="expenses-table-body">
-        <tr>
-        <td colspan="7" class="text-center text-slate-500">
+        <div id="expenses-list" class="expenses-list">
+        <div class="expense-empty-card">
         Sin gastos registrados.
-        </td>
-        </tr>
-        </tbody>
-        </table>
+        </div>
         </div>
         </section>
 
@@ -4819,6 +4809,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         `;
 
         bindBottomNav(profile, activeBusiness);
+
+
 
         document.querySelector("#btn-new-expense")?.addEventListener("click", () => {
             renderExpenseForm(profile, activeBusiness);
@@ -4834,10 +4826,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Cargar Gastos
 
     async function loadExpenses(businessId) {
-        const tbody = document.querySelector("#expenses-table-body");
+        const container = document.querySelector("#expenses-list");
 
         if (!businessId) {
-            tbody.innerHTML = `
+            container.innerHTML = `
             <tr>
             <td colspan="7" class="text-center text-red-500 font-semibold">
             No se encontró negocio activo.
@@ -4874,7 +4866,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (error) {
             console.error(error);
-            tbody.innerHTML = `
+            container.innerHTML = `
             <tr>
             <td colspan="7" class="text-center text-red-500 font-semibold">
             Error al cargar gastos.
@@ -4886,15 +4878,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!data || data.length === 0) {
             document.querySelector("#expenses-today-count").textContent = "0";
-            document.querySelector("#expenses-total-amount").textContent = formatCurrency(0);
-            document.querySelector("#expenses-month-amount").textContent = formatCurrency(0);
+            document.querySelector("#expenses-month-total").textContent = formatCurrency(0);
+            document.querySelector("#expenses-total").textContent = formatCurrency(0);
 
-            tbody.innerHTML = `
-            <tr>
-            <td colspan="7" class="text-center text-slate-500">
+            container.innerHTML = `
+            <div class="expense-empty-card">
             Sin gastos registrados.
-            </td>
-            </tr>
+            </div>
             `;
             return;
         }
@@ -4917,28 +4907,71 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 0);
 
         document.querySelector("#expenses-today-count").textContent = expensesToday.length;
-        document.querySelector("#expenses-total-amount").textContent = formatCurrency(totalAmount);
-        document.querySelector("#expenses-month-amount").textContent = formatCurrency(monthAmount);
+        document.querySelector("#expenses-month-total").textContent = formatCurrency(monthAmount);
+        document.querySelector("#expenses-total").textContent = formatCurrency(totalAmount);
 
-        tbody.innerHTML = data.map(expense => {
+        container.innerHTML = data.map(expense => {
             const conceptsText = expense.expense_items?.length
             ? expense.expense_items
             .map(item => `${item.concept} x${item.quantity}`)
-            .join(", "): "—";
+            .join(", "): "Sin conceptos";
+
+            const categoryLabel = expense.category || "General";
+            const categoryIcon = getExpenseCategoryIcon(categoryLabel);
 
             return `
-            <tr>
-            <td>#${String(expense.expense_number).padStart(4, "0")}</td>
-            <td>${formatDate(expense.created_at)}</td>
-            <td>${expense.profiles?.full_name || "—"}</td>
-            <td>${expense.category || "—"}</td>
-            <td>${conceptsText}</td>
-            <td>${formatCurrency(expense.total_amount)}</td>
-            <td>${expense.notes || "—"}</td>
-            </tr>
+            <article class="expense-card">
+            <div class="expense-card-icon">
+            ${categoryIcon}
+            </div>
+
+            <div class="expense-card-content">
+            <div class="expense-card-top">
+            <div>
+            <p class="expense-card-category">${categoryLabel}</p>
+            <h3>#${String(expense.expense_number).padStart(4, "0")}</h3>
+            </div>
+
+            <strong class="expense-card-amount">
+            ${formatCurrency(expense.total_amount)}
+            </strong>
+            </div>
+
+            <p class="expense-card-concepts">
+            ${conceptsText}
+            </p>
+
+            <div class="expense-card-meta">
+            <span>📅 ${formatDate(expense.created_at)}</span>
+            <span>👤 ${expense.profiles?.full_name || "—"}</span>
+            </div>
+
+            ${expense.notes ? `
+            <p class="expense-card-notes">
+            ${expense.notes}
+            </p>
+            `: ""}
+            </div>
+            </article>
             `;
         }).join("");
     }
+    
+    //Iconos Categoría Gastos
+    function getExpenseCategoryIcon(category = "") {
+    const value = category.toLowerCase();
+
+    if (value.includes("gasolina") || value.includes("combustible")) return "⛽";
+    if (value.includes("agua")) return "💧";
+    if (value.includes("hielo")) return "🧊";
+    if (value.includes("transporte") || value.includes("flete")) return "🚚";
+    if (value.includes("servicio")) return "🧾";
+    if (value.includes("mantenimiento")) return "🔧";
+    if (value.includes("oficina")) return "🏢";
+    if (value.includes("insumo") || value.includes("material")) return "📦";
+
+    return "💸";
+}
 
     // Vista Agregar Nuevo Gasto
 
@@ -8608,7 +8641,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const movementSign = isEntrada ? "+": isSalida ? "-": "±";
 
         const originLabel = getMovementOriginLabel(item);
-        
+
         const canViewOrder =
         item.reference_type === "order" &&
         item.reference_id;
