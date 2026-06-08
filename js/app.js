@@ -4354,8 +4354,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         renderClientCards(profile, activeBusiness);
     }
-    
-     // Cards Clientes
+
+    // Cards Clientes
     function renderClientCards(profile, activeBusiness) {
         const container = document.querySelector("#clients-list");
         const countLabel = document.querySelector("#clients-results-count");
@@ -4417,19 +4417,198 @@ document.addEventListener("DOMContentLoaded", async () => {
             <span>📱 ${client.whatsapp || "Sin WhatsApp"}</span>
             <span>📍 ${client.address || "Sin domicilio"}</span>
             </div>
+
+            <div class="client-card-actions">
+            ${client.whatsapp ? `
+            <button
+            type="button"
+            class="client-action-btn client-whatsapp-btn"
+            data-whatsapp="${client.whatsapp}"
+            >
+            💬 WhatsApp
+            </button>
+            `: ""}
+
+            ${client.address ? `
+            <button
+            type="button"
+            class="client-action-btn client-map-btn"
+            data-address="${client.address}"
+            >
+            📍 Mapa
+            </button>
+            `: ""}
+            </div>
             </div>
             </article>
             `).join("");
 
-        document.querySelectorAll(".btn-edit-client").forEach(button => {
+        document.querySelectorAll(".client-whatsapp-btn").forEach(button => {
             button.addEventListener("click", event => {
                 event.stopPropagation();
 
-                const client = clientsCache.find(
-                    item => String(item.id) === String(button.dataset.clientId)
-                );
+                const rawNumber = button.dataset.whatsapp || "";
+                const cleanNumber = rawNumber.replace(/\D/g, "");
 
-                if (!client) return;
+                if (!cleanNumber) {
+                    showToast("Este cliente no tiene WhatsApp.", "warning");
+                    return;
+                }
+
+                const finalNumber = cleanNumber.startsWith("52")
+                ? cleanNumber: `52${cleanNumber}`;
+
+                window.open(`https://wa.me/${finalNumber}`, "_blank");
+            });
+        });
+
+        document.querySelectorAll(".client-card").forEach(card => {
+            card.addEventListener("click",
+                () => {
+                    const clientId = card.dataset.clientId;
+
+                    const client = clientsCache.find(
+                        item => String(item.id) === String(clientId)
+                    );
+
+                    if (client) {
+                        openClientDetailModal(client, profile, activeBusiness);
+                    }
+                });
+        });
+
+        document.querySelectorAll(".client-map-btn").forEach(button => {
+            button.addEventListener("click",
+                event => {
+                    event.stopPropagation();
+
+                    const address = button.dataset.address || "";
+
+                    if (!address.trim()) {
+                        showToast("Este cliente no tiene domicilio.", "warning");
+                        return;
+                    }
+
+                    window.open(
+                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`,
+                        "_blank"
+                    );
+                });
+        });
+
+        document.querySelectorAll(".btn-edit-client").forEach(button => {
+            button.addEventListener("click",
+                event => {
+                    event.stopPropagation();
+
+                    const client = clientsCache.find(
+                        item => String(item.id) === String(button.dataset.clientId)
+                    );
+
+                    if (!client) return;
+
+                    renderClientForm(profile, activeBusiness, {
+                        id: client.id,
+                        name: client.name || "",
+                        whatsapp: client.whatsapp || "",
+                        address: client.address || ""
+                    });
+                });
+        });
+    }
+
+    // Modal Clientes
+    function openClientDetailModal(client, profile, activeBusiness) {
+        const modal = document.createElement("div");
+        modal.className = "client-detail-modal-backdrop";
+
+        const name = client.name || "Cliente";
+        const whatsapp = client.whatsapp || "Sin WhatsApp";
+        const address = client.address || "Sin domicilio";
+
+        modal.innerHTML = `
+        <div class="client-detail-modal">
+        <button class="client-detail-close" type="button">×</button>
+
+        <p class="client-detail-label">Detalle de cliente</p>
+
+        <div class="client-detail-header">
+        <div class="client-detail-avatar">
+        ${getClientInitials(name)}
+        </div>
+
+        <div>
+        <h2>${name}</h2>
+        <p>Cliente activo</p>
+        </div>
+        </div>
+
+        <div class="client-detail-grid">
+        <div>
+        <span>WhatsApp</span>
+        <strong>📱 ${whatsapp}</strong>
+        </div>
+
+        <div>
+        <span>Domicilio</span>
+        <strong>📍 ${address}</strong>
+        </div>
+        </div>
+
+        <div class="client-detail-actions">
+        ${client.whatsapp ? `
+        <button type="button" class="client-detail-whatsapp">
+        💬 WhatsApp
+        </button>
+        `: ""}
+
+        ${client.address ? `
+        <button type="button" class="client-detail-map">
+        📍 Abrir mapa
+        </button>
+        `: ""}
+
+        <button type="button" class="client-detail-edit">
+        ✏️ Editar cliente
+        </button>
+
+        <button type="button" class="client-detail-delete">
+        Eliminar
+        </button>
+        </div>
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector(".client-detail-close")?.addEventListener("click", () => {
+            modal.remove();
+        });
+
+        modal.addEventListener("click", event => {
+            if (event.target === modal) modal.remove();
+        });
+
+        modal.querySelector(".client-detail-whatsapp")?.addEventListener("click",
+            () => {
+                const cleanNumber = String(client.whatsapp || "").replace(/\D/g, "");
+                const finalNumber = cleanNumber.startsWith("52")
+                ? cleanNumber: `52${cleanNumber}`;
+
+                window.open(`https://wa.me/${finalNumber}`, "_blank");
+            });
+
+        modal.querySelector(".client-detail-map")?.addEventListener("click",
+            () => {
+                window.open(
+                    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address || "")}`,
+                    "_blank"
+                );
+            });
+
+        modal.querySelector(".client-detail-edit")?.addEventListener("click",
+            () => {
+                modal.remove();
 
                 renderClientForm(profile, activeBusiness, {
                     id: client.id,
@@ -4438,20 +4617,119 @@ document.addEventListener("DOMContentLoaded", async () => {
                     address: client.address || ""
                 });
             });
-        });
+
+        modal.querySelector(".client-detail-delete")?.addEventListener("click",
+            () => {
+                showDeleteClientConfirm(client, profile, activeBusiness, modal);
+            });
     }
-    
+
+    // Modal Cliente Eliminar Cliente
+    function showDeleteClientConfirm(client,
+        profile,
+        activeBusiness,
+        detailModal) {
+        const confirmModal = document.createElement("div");
+        confirmModal.className = "client-delete-confirm-backdrop";
+
+        const clientName = client.name || "este cliente";
+
+        confirmModal.innerHTML = `
+        <div class="client-delete-confirm">
+        <div class="client-delete-icon">🗑️</div>
+
+        <h2>Eliminar cliente</h2>
+
+        <p>
+        ¿Deseas eliminar a <strong>${clientName}</strong>?
+        Esta acción no se puede deshacer.
+        </p>
+
+        <div class="client-delete-actions">
+        <button type="button" class="client-delete-cancel">
+        Cancelar
+        </button>
+
+        <button type="button" class="client-delete-confirm-btn">
+        Eliminar
+        </button>
+        </div>
+        </div>
+        `;
+
+        document.body.appendChild(confirmModal);
+
+        confirmModal.querySelector(".client-delete-cancel")
+        ?.addEventListener("click",
+            () => {
+                confirmModal.remove();
+            });
+
+        confirmModal.addEventListener("click",
+            event => {
+                if (event.target === confirmModal) {
+                    confirmModal.remove();
+                }
+            });
+
+        confirmModal.querySelector(".client-delete-confirm-btn")
+        ?.addEventListener("click",
+            async () => {
+                await deleteClient(client.id, profile, activeBusiness);
+
+                confirmModal.remove();
+
+                if (detailModal) {
+                    detailModal.remove();
+                }
+            });
+    }
+
+    // Eliminar Clientes
+    async function deleteClient(clientId,
+        profile,
+        activeBusiness) {
+        if (!clientId) {
+            showToast("No se encontró el cliente.", "error");
+            return;
+        }
+
+        try {
+            const {
+                error
+            } = await supabaseClient
+            .from("clients")
+            .update({
+                is_active: false
+            })
+            .eq("id", clientId);
+
+            if (error) throw error;
+
+            showToast("Cliente eliminado correctamente.", "success");
+
+            await renderClientsView(profile, activeBusiness);
+
+        } catch (error) {
+            console.error(error);
+            showToast(
+                error.message || "No se pudo eliminar el cliente.",
+                "error"
+            );
+        }
+    }
+
     // Helper Clientes
     function getClientInitials(name = "") {
-    const words = name.trim().split(" ").filter(Boolean);
+        const words = name.trim().split(" ").filter(Boolean);
 
-    if (!words.length) return "CL";
+        if (!words.length) return "CL";
 
-    return words
+        return words
         .slice(0, 2)
         .map(word => word[0].toUpperCase())
         .join("");
-}
+    }
 
     // Formulario Nuevo Cliente
 
