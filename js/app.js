@@ -4159,7 +4159,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <p class="text-sm text-slate-500 dark:text-slate-400">Menú</p>
         <h1 class="text-2xl font-bold">Más opciones</h1>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        Clientes, configuración y herramientas.
+        Clientes, administrador, configuración y herramientas.
         </p>
         </header>
 
@@ -4167,24 +4167,41 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         <button
         id="btn-open-clients"
-        class="aqua-card p-5 w-full text-left active:scale-[0.98]"
+        class="more-option-card"
         >
-        <p class="text-sm text-slate-500 dark:text-slate-400">Administración</p>
-        <h2 class="text-xl font-bold mt-1">Clientes</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        Agrega o edita clientes para usarlos en pedidos.
-        </p>
+        <div class="more-option-icon">👥</div>
+
+        <div>
+        <p>Administración</p>
+        <h2>Clientes</h2>
+        <span>Agrega o edita clientes para usarlos en pedidos.</span>
+        </div>
         </button>
 
         <button
-        class="aqua-card p-5 w-full text-left opacity-60"
+        id="btn-open-admin"
+        class="more-option-card more-option-admin"
+        >
+        <div class="more-option-icon">🛡️</div>
+
+        <div>
+        <p>Cuenta</p>
+        <h2>Administrador</h2>
+        <span>Perfil, seguridad, respaldos y zona de peligro.</span>
+        </div>
+        </button>
+
+        <button
+        class="more-option-card opacity-60"
         disabled
         >
-        <p class="text-sm text-slate-500 dark:text-slate-400">Sistema</p>
-        <h2 class="text-xl font-bold mt-1">Configuración</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        Próximamente.
-        </p>
+        <div class="more-option-icon">⚙️</div>
+
+        <div>
+        <p>Sistema</p>
+        <h2>Configuración</h2>
+        <span>Próximamente.</span>
+        </div>
         </button>
 
         </section>
@@ -4200,6 +4217,735 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.querySelector("#btn-open-clients")?.addEventListener("click", () => {
             renderClientsView(profile, activeBusiness);
         });
+
+        document.querySelector("#btn-open-admin")?.addEventListener("click", () => {
+            renderAdminView(profile, activeBusiness);
+        });
+    }
+
+    // Función Vista Administración
+    function renderAdminView(profile, activeBusiness) {
+        const app = document.querySelector("#app");
+
+        const adminName = profile?.full_name || "Administrador";
+        const adminWhatsapp = profile?.whatsapp || "Sin WhatsApp";
+        const adminRole = profile?.role || "admin";
+        const businessName = activeBusiness?.businesses?.name || "Negocio";
+        const businessCreatedAt = activeBusiness?.businesses?.created_at;
+
+        const businessCreatedText = businessCreatedAt
+        ? formatDate(businessCreatedAt): "Sin fecha";
+
+        const businessAgeDays = businessCreatedAt
+        ? Math.max(
+            1,
+            Math.floor(
+                (new Date() - new Date(businessCreatedAt)) /
+                (1000 * 60 * 60 * 24)
+            )
+        ): 0;
+
+        const businessAgeText = businessAgeDays
+        ? `${businessAgeDays} ${businessAgeDays === 1 ? "día": "días"}`: "Sin registro";
+        const email = profile?.email || "Correo vinculado";
+        let adminStats = {
+            clients: 0,
+            products: 0,
+            orders: 0,
+            sales: 0
+        };
+
+        app.innerHTML = `
+        <section class="has-bottom-nav min-h-screen bg-transparent px-4 py-6">
+        <div class="max-w-5xl mx-auto space-y-4">
+
+        <header class="aqua-card p-5">
+        <button type="button" id="back-more" class="text-sm text-sky-600 dark:text-sky-400 font-semibold mb-4">
+        ← Volver a Más
+        </button>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400">Cuenta</p>
+        <h1 class="text-2xl font-bold">Administrador</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Perfil, seguridad, respaldos y datos del negocio.
+        </p>
+        </header>
+
+        <section class="admin-profile-card">
+        <div class="admin-avatar">
+        ${getClientInitials(adminName)}
+        </div>
+
+        <div>
+        <p>Administrador principal</p>
+        <h2>${adminName}</h2>
+        <span>${businessName}</span>
+        </div>
+        </section>
+
+        <section class="admin-kpi-grid">
+        <div class="admin-kpi-card admin-kpi-clients">
+        <div class="admin-kpi-icon">👥</div>
+        <span>Clientes</span>
+        <strong id="admin-clients-count">0</strong>
+        <small>activos</small>
+        </div>
+
+        <div class="admin-kpi-card admin-kpi-products">
+        <div class="admin-kpi-icon">📦</div>
+        <span>Productos</span>
+        <strong id="admin-products-count">0</strong>
+        <small>activos</small>
+        </div>
+
+        <div class="admin-kpi-card admin-kpi-orders">
+        <div class="admin-kpi-icon">🧾</div>
+        <span>Pedidos</span>
+        <strong id="admin-orders-count">0</strong>
+        <small>registrados</small>
+        </div>
+
+        <div class="admin-kpi-card admin-kpi-sales">
+        <div class="admin-kpi-icon">💰</div>
+        <span>Ventas</span>
+        <strong id="admin-sales-total">$0.00</strong>
+        <small>históricas</small>
+        </div>
+        </section>
+
+        <section class="admin-business-summary">
+        <h2>Resumen del negocio</h2>
+        <p>Vista rápida del estado general de Oasis Puro.</p>
+
+        <div class="admin-summary-list">
+        <div>
+        <span>👥 Clientes activos</span>
+        <strong id="summary-clients">0</strong>
+        </div>
+
+        <div>
+        <span>📦 Productos activos</span>
+        <strong id="summary-products">0</strong>
+        </div>
+
+        <div>
+        <span>🧾 Pedidos registrados</span>
+        <strong id="summary-orders">0</strong>
+        </div>
+
+        <div>
+        <span>💰 Ventas históricas</span>
+        <strong id="summary-sales">$0.00</strong>
+        </div>
+
+        <div>
+        <span>📅 Negocio creado</span>
+        <strong>${businessCreatedText}</strong>
+        </div>
+
+        <div>
+        <span>⏳ Antigüedad</span>
+        <strong>${businessAgeText}</strong>
+        </div>
+        </div>
+        </section>
+
+        <section class="admin-info-grid">
+        <div>
+        <span>Correo vinculado</span>
+        <strong>📧 ${email}</strong>
+        </div>
+
+        <div>
+        <span>WhatsApp</span>
+        <strong>📱 ${adminWhatsapp}</strong>
+        </div>
+
+        <div>
+        <span>Rol</span>
+        <strong>🛡️ ${adminRole}</strong>
+        </div>
+
+        <div>
+        <span>Negocio activo</span>
+        <strong>🏪 ${businessName}</strong>
+        </div>
+        </section>
+
+        <section class="admin-section-card">
+        <h2>Seguridad</h2>
+
+        <button id="btn-change-password" class="admin-action-btn">
+        🔐 Cambiar contraseña
+        </button>
+
+        <button id="btn-logout" class="admin-action-btn">
+        🚪 Cerrar sesión
+        </button>
+        </section>
+
+        <section class="admin-section-card">
+        <h2>Respaldos</h2>
+
+        <button id="btn-export-excel" class="admin-action-btn">
+        📊 Descargar BD en Excel
+        </button>
+
+        <button id="btn-export-pdf" class="admin-action-btn">
+        📄 Descargar BD en PDF
+        </button>
+        </section>
+
+        <section class="admin-danger-card">
+        <h2>Zona de peligro</h2>
+        <p>Estas acciones pueden afectar permanentemente los datos del negocio.</p>
+
+        <button id="btn-delete-business-data" class="admin-danger-btn">
+        🗑️ Eliminar toda la BD
+        </button>
+
+        <button id="btn-delete-account" class="admin-danger-btn">
+        ⚠️ Eliminar cuenta
+        </button>
+        </section>
+
+        ${renderBottomNav("more")}
+        </div>
+        </section>
+        `;
+
+        bindBottomNav(profile, activeBusiness);
+
+        document.querySelector("#back-more")?.addEventListener("click", () => {
+            renderMoreView(profile, activeBusiness);
+        });
+
+        document.querySelector("#btn-change-password")?.addEventListener("click", () => {
+            showToast("Cambio de contraseña próximamente.", "warning");
+        });
+
+        document.querySelector("#btn-export-excel")?.addEventListener("click", async () => {
+            await exportDatabaseToExcel(activeBusiness?.businesses?.id);
+        });
+
+        document.querySelector("#btn-export-pdf")?.addEventListener("click", () => {
+            showToast("Exportación PDF próximamente.", "warning");
+        });
+
+        document.querySelector("#btn-delete-business-data")?.addEventListener("click", () => {
+            showToast("Eliminación de datos próximamente.", "warning");
+        });
+
+        document.querySelector("#btn-delete-account")?.addEventListener("click", () => {
+            showToast("Eliminación de cuenta próximamente.", "warning");
+        });
+
+        document.querySelector("#btn-logout")?.addEventListener("click", async () => {
+            await supabaseClient.auth.signOut();
+            location.reload();
+        });
+
+        loadAdminStats(activeBusiness?.businesses?.id);
+    }
+
+    // KPIs Administrador
+    async function loadAdminStats(businessId) {
+        if (!businessId) return;
+
+        try {
+            const [
+                clientsResult,
+                productsResult,
+                ordersResult
+            ] = await Promise.all([
+                    supabaseClient
+                    .from("clients")
+                    .select("id", {
+                        count: "exact", head: true
+                    })
+                    .eq("business_id", businessId)
+                    .eq("is_active", true),
+
+                    supabaseClient
+                    .from("products")
+                    .select("id", {
+                        count: "exact", head: true
+                    })
+                    .eq("business_id", businessId)
+                    .eq("is_active", true),
+
+                    supabaseClient
+                    .from("orders")
+                    .select("id,total_sale", {
+                        count: "exact"
+                    })
+                    .eq("business_id", businessId)
+                ]);
+
+            const clientsCount = clientsResult.count || 0;
+            const productsCount = productsResult.count || 0;
+            const ordersCount = ordersResult.count || 0;
+
+            const salesTotal = (ordersResult.data || []).reduce((sum, order) => {
+                return sum + Number(order.total_sale || 0);
+            }, 0);
+
+            const clientsEl = document.querySelector("#admin-clients-count");
+            const productsEl = document.querySelector("#admin-products-count");
+            const ordersEl = document.querySelector("#admin-orders-count");
+            const salesEl = document.querySelector("#admin-sales-total");
+
+            const summaryClients = document.querySelector("#summary-clients");
+            const summaryProducts = document.querySelector("#summary-products");
+            const summaryOrders = document.querySelector("#summary-orders");
+            const summarySales = document.querySelector("#summary-sales");
+
+            if (summaryClients) summaryClients.textContent = clientsCount;
+            if (summaryProducts) summaryProducts.textContent = productsCount;
+            if (summaryOrders) summaryOrders.textContent = ordersCount;
+            if (summarySales) summarySales.textContent = formatCurrency(salesTotal);
+
+            if (clientsEl) clientsEl.textContent = clientsCount;
+            if (productsEl) productsEl.textContent = productsCount;
+            if (ordersEl) ordersEl.textContent = ordersCount;
+            if (salesEl) salesEl.textContent = formatCurrency(salesTotal);
+
+        } catch (error) {
+            console.error(error);
+            showToast("No se pudieron cargar los KPIs del administrador.", "error");
+        }
+    }
+
+    // Exportar BD Excel
+    async function exportDatabaseToExcel(businessId) {
+        if (!businessId) {
+            showToast("No se encontró negocio activo.", "error");
+            return;
+        }
+
+        const formatExcelDate = (dateValue) => {
+            if (!dateValue) return "—";
+            return new Date(dateValue).toLocaleString("es-MX", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true
+            });
+        };
+
+        const setHeaderStyle = (worksheet) => {
+            worksheet.getRow(1).eachCell(cell => {
+                cell.font = {
+                    bold: true, color: {
+                        argb: "FFFFFFFF"
+                    }
+                };
+                cell.fill = {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: {
+                        argb: "FF0284C7"
+                    }
+                };
+                cell.alignment = {
+                    vertical: "middle", horizontal: "center"
+                };
+            });
+        };
+
+        const autoWidth = (worksheet) => {
+            worksheet.columns.forEach(column => {
+                let maxLength = 14;
+                column.eachCell({
+                    includeEmpty: true
+                }, cell => {
+                    maxLength = Math.max(
+                        maxLength,
+                        String(cell.value || "").length + 4
+                    );
+                });
+                column.width = Math.min(maxLength, 32);
+            });
+        };
+
+        const addRowsSheet = (workbook, sheetName, rows) => {
+            const worksheet = workbook.addWorksheet(sheetName);
+
+            if (!rows.length) {
+                worksheet.addRow(["Sin datos"]);
+                worksheet.addRow(["No hay registros disponibles"]);
+                autoWidth(worksheet);
+                return worksheet;
+            }
+
+            worksheet.columns = Object.keys(rows[0]).map(key => ({
+                header: key,
+                key
+            }));
+
+            rows.forEach(row => worksheet.addRow(row));
+
+            setHeaderStyle(worksheet);
+            autoWidth(worksheet);
+
+            worksheet.views = [{
+                state: "frozen",
+                ySplit: 1
+            }];
+            worksheet.autoFilter = {
+                from: "A1",
+                to: worksheet.getRow(1).getCell(worksheet.columnCount).address
+            };
+
+            return worksheet;
+        };
+
+        const statusColor = (status) => {
+            const value = String(status || "").toLowerCase();
+
+            if (value.includes("pagado") || value.includes("entregado")) {
+                return "FFDCFCE7";
+            }
+
+            if (value.includes("pendiente") || value.includes("proceso")) {
+                return "FFFEF3C7";
+            }
+
+            if (value.includes("cancelado")) {
+                return "FFFEE2E2";
+            }
+
+            return "FFE0F2FE";
+        };
+
+        try {
+            showToast("Generando Excel premium...", "warning");
+
+            const [
+                clientsResult,
+                productsResult,
+                ordersResult,
+                orderItemsResult,
+                expensesResult,
+                expenseItemsResult,
+                inventoryResult,
+                profilesResult
+            ] = await Promise.all([
+                    supabaseClient.from("clients").select("*").eq("business_id", businessId),
+                    supabaseClient.from("products").select("*").eq("business_id", businessId),
+                    supabaseClient.from("orders").select("*").eq("business_id", businessId),
+                    supabaseClient.from("order_items").select("*"),
+                    supabaseClient.from("expenses").select("*").eq("business_id", businessId),
+                    supabaseClient.from("expense_items").select("*"),
+                    supabaseClient.from("inventory_movements").select("*").eq("business_id", businessId),
+                    supabaseClient.from("profiles").select("*")
+                ]);
+
+            const allResults = [
+                clientsResult,
+                productsResult,
+                ordersResult,
+                orderItemsResult,
+                expensesResult,
+                expenseItemsResult,
+                inventoryResult,
+                profilesResult
+            ];
+
+            const failed = allResults.find(result => result.error);
+            if (failed) throw failed.error;
+
+            const clients = clientsResult.data || [];
+            const products = productsResult.data || [];
+            const orders = ordersResult.data || [];
+            const orderItems = orderItemsResult.data || [];
+            const expenses = expensesResult.data || [];
+            const expenseItems = expenseItemsResult.data || [];
+            const inventory = inventoryResult.data || [];
+            const profiles = profilesResult.data || [];
+
+            const clientMap = Object.fromEntries(
+                clients.map(c => [c.id, c.name || "Cliente sin nombre"])
+            );
+
+            const profileMap = Object.fromEntries(
+                profiles.map(p => [p.id, p.full_name || "Usuario sin nombre"])
+            );
+
+            const productMap = Object.fromEntries(
+                products.map(p => [p.id, `${p.brand || ""} ${p.name || ""}`.trim()])
+            );
+
+            const orderMap = Object.fromEntries(
+                orders.map(o => [o.id, `Pedido #${String(o.order_number).padStart(4, "0")}`])
+            );
+
+            const expenseMap = Object.fromEntries(
+                expenses.map(e => [e.id, `Gasto #${String(e.expense_number).padStart(4, "0")}`])
+            );
+
+            const totalSales = orders.reduce((sum, o) => sum + Number(o.total_sale || 0), 0);
+            const totalProfit = orders.reduce((sum, o) => sum + Number(o.total_profit || 0), 0);
+            const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.total_amount || 0), 0);
+            const inventoryValue = products.reduce((sum, p) => {
+                return sum + (Number(p.stock || 0) * Number(p.cost_price || 0));
+            }, 0);
+
+            const workbook = new ExcelJS.Workbook();
+            workbook.creator = "Oasis Puro";
+            workbook.created = new Date();
+
+            const summarySheet = workbook.addWorksheet("Resumen Ejecutivo");
+
+            summarySheet.addRows([
+                ["OASIS PURO - RESPALDO GENERAL"],
+                [""],
+                ["Fecha de generación", formatExcelDate(new Date())],
+                ["Clientes activos", clients.filter(c => c.is_active !== false).length],
+                ["Productos activos", products.filter(p => p.is_active !== false).length],
+                ["Pedidos registrados", orders.length],
+                ["Ventas históricas", totalSales],
+                ["Ganancia histórica", totalProfit],
+                ["Gastos históricos", totalExpenses],
+                ["Valor inventario", inventoryValue]
+            ]);
+
+            summarySheet.getCell("A1").font = {
+                bold: true,
+                size: 18,
+                color: {
+                    argb: "FF0284C7"
+                }
+            };
+
+            summarySheet.getColumn(1).width = 28;
+            summarySheet.getColumn(2).width = 24;
+
+            ["B6",
+                "B7",
+                "B8",
+                "B9",
+                "B10"].forEach(cell => {
+                    summarySheet.getCell(cell).numFmt = '"$"#,##0.00';
+                });
+
+            const cleanClients = clients.map(c => ({
+                "Nombre del cliente": c.name || "—",
+                "WhatsApp": c.whatsapp || "—",
+                "Domicilio": c.address || "—",
+                "Notas": c.notes || "—",
+                "Fecha de registro": formatExcelDate(c.created_at)
+            }));
+
+            const cleanProducts = products.map(p => ({
+                "Imagen": "",
+                "Marca": p.brand || "—",
+                "Producto": p.name || "—",
+                "Categoría": p.category || "—",
+                "Presentación": p.presentation || "—",
+                "SKU": p.sku || "—",
+                "Costo": Number(p.cost_price || 0),
+                "Precio venta": Number(p.sale_price || 0),
+                "Stock actual": Number(p.stock || 0),
+                "Stock mínimo": Number(p.min_stock || 0),
+                "Valor inventario": Number(p.stock || 0) * Number(p.cost_price || 0),
+                "Fecha de registro": formatExcelDate(p.created_at)
+            }));
+
+            const cleanOrders = orders.map(o => ({
+                "Pedido": `#${String(o.order_number).padStart(4, "0")}`,
+                "Cliente comprador": clientMap[o.client_id] || "Cliente no disponible",
+                "Vendedor/Admin": profileMap[o.seller_id] || "Usuario no disponible",
+                "Estado": o.status || "—",
+                "Venta total": Number(o.total_sale || 0),
+                "Costo total": Number(o.total_cost || 0),
+                "Ganancia": Number(o.total_profit || 0),
+                "Notas": o.notes || "—",
+                "Fecha del pedido": formatExcelDate(o.created_at)
+            }));
+
+            const orderIds = new Set(orders.map(o => o.id));
+
+            const cleanOrderItems = orderItems
+            .filter(item => orderIds.has(item.order_id))
+            .map(item => ({
+                "Pedido relacionado": orderMap[item.order_id] || "Pedido no disponible",
+                "Producto": item.product_name || productMap[item.product_id] || "Producto no disponible",
+                "Cantidad": Number(item.quantity || 0),
+                "Precio venta": Number(item.sale_price || 0),
+                "Costo": Number(item.cost_price || 0),
+                "Subtotal": Number(item.subtotal || 0),
+                "Costo total": Number(item.total_cost || 0),
+                "Ganancia": Number(item.profit || 0),
+                "Fecha": formatExcelDate(item.created_at)
+            }));
+
+            const cleanExpenses = expenses.map(e => ({
+                "Gasto": `#${String(e.expense_number).padStart(4, "0")}`,
+                "Categoría": e.category || "General",
+                "Registrado por": profileMap[e.user_id] || "Usuario no disponible",
+                "Total": Number(e.total_amount || 0),
+                "Notas": e.notes || "—",
+                "Fecha": formatExcelDate(e.created_at)
+            }));
+
+            const expenseIds = new Set(expenses.map(e => e.id));
+
+            const cleanExpenseItems = expenseItems
+            .filter(item => expenseIds.has(item.expense_id))
+            .map(item => ({
+                "Gasto relacionado": expenseMap[item.expense_id] || "Gasto no disponible",
+                "Concepto": item.concept || "—",
+                "Cantidad": Number(item.quantity || 0),
+                "Costo unitario": Number(item.unit_cost || 0),
+                "Subtotal": Number(item.subtotal || 0),
+                "Fecha": formatExcelDate(item.created_at)
+            }));
+
+            const cleanInventory = inventory.map(m => ({
+                "Producto": productMap[m.product_id] || "Producto no disponible",
+                "Usuario": profileMap[m.user_id] || "Usuario no disponible",
+                "Tipo de movimiento": m.movement_type || "—",
+                "Cantidad": Number(m.quantity || 0),
+                "Motivo": m.reason || "—",
+                "Stock anterior": m.stock_before ?? "—",
+                "Stock nuevo": m.stock_after ?? "—",
+                "Notas": m.notes || "—",
+                "Fecha": formatExcelDate(m.created_at)
+            }));
+
+            addRowsSheet(workbook, "Clientes", cleanClients);
+
+            const productsSheet = addRowsSheet(workbook, "Productos", cleanProducts);
+            productsSheet.getColumn(1).width = 18;
+
+            productsSheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    row.height = 80;
+                }
+            });
+
+            for (let i = 0; i < products.length; i++) {
+                const product = products[i];
+                const imageUrl = product.image_url || product.imagen_url;
+
+                if (!imageUrl) continue;
+
+                try {
+                    const response = await fetch(imageUrl);
+                    const blob = await response.blob();
+                    const buffer = await blob.arrayBuffer();
+
+                    const imageId = workbook.addImage({
+                        buffer,
+                        extension: "png"
+                    });
+
+                    productsSheet.addImage(imageId, {
+                        tl: {
+                            col: 0.15, row: i + 1.15
+                        },
+                        ext: {
+                            width: 70, height: 70
+                        }
+                    });
+                } catch (imageError) {
+                    console.warn("No se pudo insertar imagen:", imageError);
+                    productsSheet.getCell(i + 2, 1).value = "Ver imagen";
+                    productsSheet.getCell(i + 2, 1).hyperlink = imageUrl;
+                }
+            }
+
+            const ordersSheet = addRowsSheet(workbook, "Pedidos", cleanOrders);
+
+            const statusColumnIndex = cleanOrders[0]
+            ? Object.keys(cleanOrders[0]).indexOf("Estado") + 1: 0;
+
+            if (statusColumnIndex > 0) {
+                ordersSheet.eachRow((row, rowNumber) => {
+                    if (rowNumber === 1) return;
+
+                    const cell = row.getCell(statusColumnIndex);
+                    cell.fill = {
+                        type: "pattern",
+                        pattern: "solid",
+                        fgColor: {
+                            argb: statusColor(cell.value)
+                        }
+                    };
+                    cell.font = {
+                        bold: true
+                    };
+                });
+            }
+
+            addRowsSheet(workbook,
+                "Detalle Pedidos",
+                cleanOrderItems);
+            addRowsSheet(workbook,
+                "Gastos",
+                cleanExpenses);
+            addRowsSheet(workbook,
+                "Detalle Gastos",
+                cleanExpenseItems);
+            addRowsSheet(workbook,
+                "Inventario",
+                cleanInventory);
+
+            workbook.eachSheet(sheet => {
+                sheet.eachRow(row => {
+                    row.eachCell(cell => {
+                        cell.border = {
+                            top: {
+                                style: "thin", color: {
+                                    argb: "FFE2E8F0"
+                                }
+                            },
+                            left: {
+                                style: "thin", color: {
+                                    argb: "FFE2E8F0"
+                                }
+                            },
+                            bottom: {
+                                style: "thin", color: {
+                                    argb: "FFE2E8F0"
+                                }
+                            },
+                            right: {
+                                style: "thin", color: {
+                                    argb: "FFE2E8F0"
+                                }
+                            }
+                        };
+                        cell.alignment = {
+                            vertical: "middle",
+                            wrapText: true
+                        };
+                    });
+                });
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+
+            const today = new Date().toISOString().slice(0,
+                10);
+            saveAs(
+                new Blob([buffer], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                }),
+                `OasisPuro_Respaldo_Ejecutivo_${today}.xlsx`
+            );
+
+            showToast("Excel ejecutivo descargado correctamente.",
+                "success");
+
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "No se pudo generar el Excel.",
+                "error");
+        }
     }
 
     // Función Vista Clientes
@@ -4207,7 +4953,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     let clientsCache = [];
     let currentClientSearch = "";
 
-    async function renderClientsView(profile, activeBusiness) {
+    async function renderClientsView(profile,
+        activeBusiness) {
         const app = document.querySelector("#app");
 
         app.innerHTML = `
@@ -4284,20 +5031,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         </section>
         `;
 
-        bindBottomNav(profile, activeBusiness);
+        bindBottomNav(profile,
+            activeBusiness);
 
-        document.querySelector("#back-more")?.addEventListener("click", () => {
-            renderMoreView(profile, activeBusiness);
-        });
+        document.querySelector("#back-more")?.addEventListener("click",
+            () => {
+                renderMoreView(profile,
+                    activeBusiness);
+            });
 
-        document.querySelector("#btn-new-client")?.addEventListener("click", () => {
-            renderClientForm(profile, activeBusiness);
-        });
+        document.querySelector("#btn-new-client")?.addEventListener("click",
+            () => {
+                renderClientForm(profile,
+                    activeBusiness);
+            });
 
-        document.querySelector("#clients-search")?.addEventListener("input", event => {
-            currentClientSearch = event.target.value.trim().toLowerCase();
-            renderClientCards(profile, activeBusiness);
-        });
+        document.querySelector("#clients-search")?.addEventListener("input",
+            event => {
+                currentClientSearch = event.target.value.trim().toLowerCase();
+                renderClientCards(profile,
+                    activeBusiness);
+            });
 
         await loadClients(
             profile,
@@ -4308,7 +5062,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Cargar Clientes
 
-    async function loadClients(profile, activeBusiness, businessId) {
+    async function loadClients(profile,
+        activeBusiness,
+        businessId) {
         const container = document.querySelector("#clients-list");
 
         if (!businessId) {
@@ -4518,7 +5274,82 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Modal Clientes
-    function openClientDetailModal(client, profile, activeBusiness) {
+    async function openClientDetailModal(client, profile, activeBusiness) {
+        const {
+            data: clientOrders, error: ordersError
+        } = await supabaseClient
+        .from("orders")
+        .select(`
+            id,
+            order_number,
+            total_sale,
+            status,
+            created_at
+            `)
+        .eq("client_id", client.id)
+        .order("created_at", {
+            ascending: false
+        });
+
+        if (ordersError) {
+            console.error(ordersError);
+        }
+
+        const orders = clientOrders || [];
+
+        const totalOrders = orders.length;
+
+        const totalSpent = orders.reduce((sum, order) => {
+            return sum + Number(order.total_sale || 0);
+        }, 0);
+
+        const lastOrder = orders.length
+        ? formatDate(orders[0].created_at): "Sin pedidos";
+
+        let clientLevel = "Nuevo";
+
+        if (totalOrders >= 5) clientLevel = "Frecuente";
+        if (totalOrders >= 15) clientLevel = "VIP";
+        if (totalOrders >= 30) clientLevel = "Premium";
+
+        let clientLevelClass = "client-level-new";
+
+        if (totalOrders >= 5)
+            clientLevelClass = "client-level-frequent";
+
+        if (totalOrders >= 15)
+            clientLevelClass = "client-level-vip";
+
+        if (totalOrders >= 30)
+            clientLevelClass = "client-level-premium";
+
+        const clientSince = client.created_at
+        ? formatDate(client.created_at): "Sin fecha";
+
+        const clientDays = client.created_at
+        ? Math.max(
+            1,
+            Math.floor(
+                (new Date() - new Date(client.created_at)) /
+                (1000 * 60 * 60 * 24)
+            )
+        ): 0;
+
+        const clientDaysText = clientDays
+        ? `${clientDays} ${clientDays === 1 ? "día": "días"}`: "Sin registro";
+
+        const lastOrdersHtml = orders.length
+        ? orders.slice(0, 5).map(order => `
+            <div class="client-order-row">
+            <span>#${String(order.order_number).padStart(4, "0")}</span>
+            <strong>${formatCurrency(order.total_sale || 0)}</strong>
+            <small>${formatDate(order.created_at)}</small>
+            </div>
+            `).join(""): `
+        <div class="client-empty-orders">
+        Sin pedidos registrados.
+        </div>
+        `;
         const modal = document.createElement("div");
         modal.className = "client-detail-modal-backdrop";
 
@@ -4539,8 +5370,50 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         <div>
         <h2>${name}</h2>
+
+        <div class="client-level-badge ${clientLevelClass}">
+        ⭐ ${clientLevel}
+        </div>
+
         <p>Cliente activo</p>
         </div>
+        </div>
+
+        <div class="client-stats-grid">
+        <div>
+        <span>Pedidos</span>
+        <strong>📦 ${totalOrders}</strong>
+        </div>
+
+        <div>
+        <span>Total comprado</span>
+        <strong>💰 ${formatCurrency(totalSpent)}</strong>
+        </div>
+
+        <div>
+        <span>Último pedido</span>
+        <strong>📅 ${lastOrder}</strong>
+        </div>
+
+        <div>
+        <span>Nivel</span>
+        <strong>⭐ ${clientLevel}</strong>
+        </div>
+
+        <div>
+        <span>Cliente desde</span>
+        <strong>📅 ${clientSince}</strong>
+        </div>
+
+        <div>
+        <span>Antigüedad</span>
+        <strong>🗓️ ${clientDaysText}</strong>
+        </div>
+        </div>
+
+        <div class="client-orders-box">
+        <h3>Últimos pedidos</h3>
+        ${lastOrdersHtml}
         </div>
 
         <div class="client-detail-grid">
