@@ -2116,7 +2116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         <button
         id="btn-download-orders-pdf"
-        class="orders-secondary-btn"
+        class="orders-pdf-btn"
         >
         <img src="./assets/icons/download-file.svg" alt="Descargar">
         PDF Pedidos
@@ -2132,6 +2132,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="orders-kpi-icon orders-kpi-orders">📦</div>
         <p>Pedidos hoy</p>
         <h2 id="orders-today-count">0</h2>
+        </div>
+
+        <div class="orders-kpi-card">
+        <div class="orders-kpi-icon orders-kpi-month">🗓️</div>
+        <p>Pedidos mes</p>
+        <h2 id="orders-month-count">0</h2>
         </div>
 
         <div class="orders-kpi-card">
@@ -2372,6 +2378,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.querySelector("#orders-today-count").textContent = "0";
             document.querySelector("#orders-total-sale").textContent = formatCurrency(0);
             document.querySelector("#orders-total-profit").textContent = formatCurrency(0);
+            document.querySelector("#orders-month-count").textContent = formatCurrency(0);
             tbody.innerHTML = `
             <tr>
             <td colspan="9" class="text-center text-slate-500">
@@ -2383,9 +2390,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const today = new Date().toISOString().slice(0, 10);
+        const currentMonth = new Date().toISOString().slice(0, 7);
 
         const ordersToday = data.filter(order => {
             return order.created_at?.slice(0, 10) === today;
+        });
+        const ordersMonth = data.filter(order => {
+            return order.created_at?.slice(0, 7) === currentMonth;
         });
 
         const totalSale = data.reduce((sum, order) => {
@@ -2399,6 +2410,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.querySelector("#orders-today-count").textContent = ordersToday.length;
         document.querySelector("#orders-total-sale").textContent = formatCurrency(totalSale);
         document.querySelector("#orders-total-profit").textContent = formatCurrency(totalProfit);
+        document.querySelector("#orders-month-count").textContent = ordersMonth.length;
 
         tbody.innerHTML = data.map(order => {
             const productsText = order.order_items?.length
@@ -2531,7 +2543,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 Pedido #${orderNumber}
                 </p>
 
-                <h3>
+                <h3 class="order-client-full-name">
                 ${order.clients?.name || "Sin cliente"}
                 </h3>
 
@@ -4224,7 +4236,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Función Vista Administración
-    function renderAdminView(profile, activeBusiness) {
+    async function renderAdminView(profile, activeBusiness) {
         const app = document.querySelector("#app");
 
         const adminName = profile?.full_name || "Administrador";
@@ -4247,7 +4259,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const businessAgeText = businessAgeDays
         ? `${businessAgeDays} ${businessAgeDays === 1 ? "día": "días"}`: "Sin registro";
-        const email = profile?.email || "Correo vinculado";
+
+        const {
+            data: {
+                user
+            }
+        } = await supabaseClient.auth.getUser();
+
+        const email = user?.email || "Sin correo vinculado";
+
         let adminStats = {
             clients: 0,
             products: 0,
@@ -4375,6 +4395,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         <section class="admin-section-card">
         <h2>Seguridad</h2>
 
+        <button id="btn-edit-admin-name" class="admin-action-btn">
+        👤 Editar nombre
+        </button>
+
+        <button id="btn-edit-admin-whatsapp" class="admin-action-btn">
+        📱 Editar WhatsApp
+        </button>
+
         <button id="btn-change-password" class="admin-action-btn">
         🔐 Cambiar contraseña
         </button>
@@ -4421,7 +4449,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         document.querySelector("#btn-change-password")?.addEventListener("click", () => {
-            showToast("Cambio de contraseña próximamente.", "warning");
+            openChangePasswordModal();
         });
 
         document.querySelector("#btn-export-excel")?.addEventListener("click", async () => {
@@ -4433,11 +4461,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         document.querySelector("#btn-delete-business-data")?.addEventListener("click", () => {
-            showToast("Eliminación de datos próximamente.", "warning");
+            openDangerConfirmModal( {
+                title: "Eliminar toda la BD",
+                description: "Se eliminarán pedidos, gastos, clientes, productos e historial de inventario de este negocio. Esta acción no se puede deshacer.",
+                keyword: "ELIMINAR",
+                confirmText: "Eliminar BD",
+                onConfirm: async () => {
+                    await deleteBusinessDatabase(activeBusiness?.businesses?.id);
+                }
+            });
         });
 
         document.querySelector("#btn-delete-account")?.addEventListener("click", () => {
-            showToast("Eliminación de cuenta próximamente.", "warning");
+            openDangerConfirmModal( {
+                title: "Eliminar cuenta",
+                description: "Se desactivará tu perfil y se cerrará la sesión. Para eliminar completamente el usuario de Auth se requiere hacerlo desde Supabase.",
+                keyword: "BORRAR CUENTA",
+                confirmText: "Eliminar cuenta",
+                onConfirm: async () => {
+                    await deleteAdminAccount(profile);
+                }
+            });
         });
 
         document.querySelector("#btn-logout")?.addEventListener("click", async () => {
@@ -4445,7 +4489,417 @@ document.addEventListener("DOMContentLoaded", async () => {
             location.reload();
         });
 
+        document.querySelector("#btn-edit-admin-name")?.addEventListener("click", () => {
+            openEditAdminNameModal(profile, activeBusiness);
+        });
+
+        document.querySelector("#btn-edit-admin-whatsapp")?.addEventListener("click", () => {
+            openEditAdminWhatsappModal(profile, activeBusiness);
+        });
+
         loadAdminStats(activeBusiness?.businesses?.id);
+    }
+
+    // Modal Eliminar
+    function openDangerConfirmModal( {
+        title,
+        description,
+        keyword,
+        confirmText,
+        onConfirm
+    }) {
+        const modal = document.createElement("div");
+        modal.className = "danger-confirm-backdrop";
+
+        modal.innerHTML = `
+        <div class="danger-confirm-modal">
+        <button class="danger-confirm-close" type="button">×</button>
+
+        <div class="danger-confirm-icon">⚠️</div>
+
+        <h2>${title}</h2>
+        <p>${description}</p>
+
+        <div class="danger-keyword-box">
+        <span>Para confirmar escribe:</span>
+        <strong>${keyword}</strong>
+        </div>
+
+        <label>
+        <span>Confirmación</span>
+        <input id="danger-confirm-input" type="text" placeholder="${keyword}">
+        </label>
+
+        <div class="danger-confirm-actions">
+        <button type="button" class="danger-cancel-btn">Cancelar</button>
+        <button type="button" class="danger-delete-btn" disabled>
+        ${confirmText}
+        </button>
+        </div>
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const input = modal.querySelector("#danger-confirm-input");
+        const deleteBtn = modal.querySelector(".danger-delete-btn");
+
+        const closeModal = () => modal.remove();
+
+        modal.querySelector(".danger-confirm-close")?.addEventListener("click", closeModal);
+        modal.querySelector(".danger-cancel-btn")?.addEventListener("click", closeModal);
+
+        modal.addEventListener("click", (event) => {
+            if (event.target === modal) closeModal();
+        });
+
+        input?.addEventListener("input",
+            () => {
+                deleteBtn.disabled = input.value.trim() !== keyword;
+            });
+
+        deleteBtn?.addEventListener("click",
+            async () => {
+                try {
+                    deleteBtn.disabled = true;
+                    deleteBtn.textContent = "Procesando...";
+
+                    await onConfirm();
+
+                    closeModal();
+
+                } catch (error) {
+                    console.error(error);
+                    showToast(error.message || "No se pudo completar la acción.", "error");
+                    deleteBtn.disabled = false;
+                    deleteBtn.textContent = confirmText;
+                }
+            });
+
+        setTimeout(() => input?.focus(),
+            80);
+    }
+
+    // Función Eliminar toda la Base de datos
+    async function deleteBusinessDatabase(businessId) {
+        if (!businessId) {
+            showToast("No se encontró negocio activo.", "error");
+            return;
+        }
+
+        try {
+            showToast("Eliminando datos del negocio...", "warning");
+
+            const {
+                data: orders
+            } = await supabaseClient
+            .from("orders")
+            .select("id")
+            .eq("business_id", businessId);
+
+            const {
+                data: expenses
+            } = await supabaseClient
+            .from("expenses")
+            .select("id")
+            .eq("business_id", businessId);
+
+            const orderIds = (orders || []).map(item => item.id);
+            const expenseIds = (expenses || []).map(item => item.id);
+
+            if (orderIds.length) {
+                await supabaseClient
+                .from("order_items")
+                .delete()
+                .in("order_id", orderIds);
+            }
+
+            if (expenseIds.length) {
+                await supabaseClient
+                .from("expense_items")
+                .delete()
+                .in("expense_id", expenseIds);
+            }
+
+            const deletes = await Promise.all([
+                supabaseClient.from("inventory_movements").delete().eq("business_id", businessId),
+                supabaseClient.from("orders").delete().eq("business_id", businessId),
+                supabaseClient.from("expenses").delete().eq("business_id", businessId),
+                supabaseClient.from("clients").delete().eq("business_id", businessId),
+                supabaseClient.from("products").delete().eq("business_id", businessId),
+                supabaseClient.from("business_goals").delete().eq("business_id", businessId)
+            ]);
+
+            const failed = deletes.find(result => result.error);
+            if (failed) throw failed.error;
+
+            showToast("BD eliminada correctamente.", "success");
+            renderAdminView(profile, activeBusiness);
+
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "No se pudo eliminar la BD.", "error");
+        }
+    }
+
+    // Función Eliminar/Desactivar Cuenta
+    async function deleteAdminAccount(profile) {
+        if (!profile?.id) {
+            showToast("No se encontró el perfil.", "error");
+            return;
+        }
+
+        try {
+            showToast("Eliminando cuenta...", "warning");
+
+            const {
+                error
+            } = await supabaseClient
+            .from("profiles")
+            .update({
+                is_active: false
+            })
+            .eq("id", profile.id);
+
+            if (error) throw error;
+
+            await supabaseClient.auth.signOut();
+
+            showToast("Cuenta desactivada correctamente.", "success");
+
+            setTimeout(() => {
+                location.reload();
+            }, 900);
+
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "No se pudo eliminar la cuenta.", "error");
+        }
+    }
+
+    // Cambiar Contraseña y WhatsApp Leer Correo
+    function openEditAdminNameModal(profile,
+        activeBusiness) {
+        openAdminInputModal( {
+            title: "Editar nombre",
+            description: "Actualiza el nombre visible del administrador.",
+            icon: "👤",
+            label: "Nombre del administrador",
+            value: profile?.full_name || "",
+            type: "text",
+            confirmText: "Guardar nombre",
+            onConfirm: async (value) => {
+                const cleanName = value.trim();
+
+                if (!cleanName) {
+                    showToast("El nombre no puede estar vacío.", "warning");
+                    return false;
+                }
+
+                await updateAdminProfile( {
+                    full_name: cleanName
+                }, profile, activeBusiness);
+                return true;
+            }
+        });
+    }
+
+    function openEditAdminWhatsappModal(profile,
+        activeBusiness) {
+        openAdminInputModal( {
+            title: "Editar WhatsApp",
+            description: "Actualiza el número de contacto del administrador.",
+            icon: "📱",
+            label: "WhatsApp",
+            value: profile?.whatsapp || "",
+            type: "tel",
+            confirmText: "Guardar WhatsApp",
+            onConfirm: async (value) => {
+                const cleanWhatsapp = value.trim();
+
+                await updateAdminProfile( {
+                    whatsapp: cleanWhatsapp
+                }, profile, activeBusiness);
+                return true;
+            }
+        });
+    }
+
+    function openChangePasswordModal() {
+        openAdminPasswordModal();
+    }
+
+    // Modal Cambio Nombre, WhatsApp y Contraseña
+    function openAdminInputModal( {
+        title,
+        description,
+        icon,
+        label,
+        value = "",
+        type = "text",
+        confirmText = "Guardar",
+        onConfirm
+    }) {
+        const modal = document.createElement("div");
+        modal.className = "admin-modal-backdrop";
+
+        modal.innerHTML = `
+        <div class="admin-input-modal">
+        <button class="admin-modal-close" type="button">×</button>
+
+        <div class="admin-modal-icon">${icon}</div>
+
+        <h2>${title}</h2>
+        <p>${description}</p>
+
+        <label>
+        <span>${label}</span>
+        <input id="admin-modal-input" type="${type}" value="${value}" autocomplete="off">
+        </label>
+
+        <div class="admin-modal-actions">
+        <button type="button" class="admin-modal-cancel">Cancelar</button>
+        <button type="button" class="admin-modal-confirm">${confirmText}</button>
+        </div>
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const input = modal.querySelector("#admin-modal-input");
+
+        setTimeout(() => input?.focus(),
+            80);
+
+        const closeModal = () => modal.remove();
+
+        modal.querySelector(".admin-modal-close")?.addEventListener("click",
+            closeModal);
+        modal.querySelector(".admin-modal-cancel")?.addEventListener("click",
+            closeModal);
+
+        modal.addEventListener("click",
+            (event) => {
+                if (event.target === modal) closeModal();
+            });
+
+        modal.querySelector(".admin-modal-confirm")?.addEventListener("click",
+            async () => {
+                const button = modal.querySelector(".admin-modal-confirm");
+
+                try {
+                    button.disabled = true;
+                    button.textContent = "Guardando...";
+
+                    const shouldClose = await onConfirm(input.value);
+
+                    if (shouldClose) closeModal();
+
+                } catch (error) {
+                    console.error(error);
+                    showToast(error.message || "No se pudo guardar.", "error");
+                } finally {
+                    button.disabled = false;
+                    button.textContent = confirmText;
+                }
+            });
+    }
+
+    function openAdminPasswordModal() {
+        const modal = document.createElement("div");
+        modal.className = "admin-modal-backdrop";
+
+        modal.innerHTML = `
+        <div class="admin-input-modal">
+        <button class="admin-modal-close" type="button">×</button>
+
+        <div class="admin-modal-icon">🔐</div>
+
+        <h2>Cambiar contraseña</h2>
+        <p>Escribe tu nueva contraseña dos veces para confirmar el cambio.</p>
+
+        <label>
+        <span>Nueva contraseña</span>
+        <input id="new-admin-password" type="password" autocomplete="new-password">
+        </label>
+
+        <label>
+        <span>Confirmar contraseña</span>
+        <input id="confirm-admin-password" type="password" autocomplete="new-password">
+        </label>
+
+        <div class="admin-password-hint">
+        Mínimo 6 caracteres.
+        </div>
+
+        <div class="admin-modal-actions">
+        <button type="button" class="admin-modal-cancel">Cancelar</button>
+        <button type="button" class="admin-modal-confirm">Actualizar</button>
+        </div>
+        </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeModal = () => modal.remove();
+
+        modal.querySelector(".admin-modal-close")?.addEventListener("click",
+            closeModal);
+        modal.querySelector(".admin-modal-cancel")?.addEventListener("click",
+            closeModal);
+
+        modal.addEventListener("click",
+            (event) => {
+                if (event.target === modal) closeModal();
+            });
+
+        modal.querySelector(".admin-modal-confirm")?.addEventListener("click",
+            async () => {
+                const password = modal.querySelector("#new-admin-password").value;
+                const confirmPassword = modal.querySelector("#confirm-admin-password").value;
+                const button = modal.querySelector(".admin-modal-confirm");
+
+                if (password.length < 6) {
+                    showToast("La contraseña debe tener mínimo 6 caracteres.", "warning");
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showToast("Las contraseñas no coinciden.", "error");
+                    return;
+                }
+
+                try {
+                    button.disabled = true;
+                    button.textContent = "Actualizando...";
+
+                    await updateAdminPassword(password);
+
+                    closeModal();
+
+                } finally {
+                    button.disabled = false;
+                    button.textContent = "Actualizar";
+                }
+            });
+    }
+
+    async function updateAdminPassword(newPassword) {
+        try {
+            const {
+                error
+            } = await supabaseClient.auth.updateUser({
+                    password: newPassword
+                });
+
+            if (error) throw error;
+
+            showToast("Contraseña actualizada correctamente.", "success");
+
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "No se pudo cambiar la contraseña.", "error");
+        }
     }
 
     // KPIs Administrador
