@@ -2,22 +2,24 @@
   "name": "Oasis Puro",
   "short_name": "Oasis Puro",
   "description": "Aplicación administrativa para pedidos, ventas, gastos e inventario.",
-  "start_url": "/AquaControl/",
-  "scope": "/AquaControl/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#0ea5e9",
   "icons": [
     {
-      "src": "/AquaControl/assets/logo-oasis-puro.png",
+      "src": "/assets/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/AquaControl/assets/logo-oasis-puro.png",
+      "src": "/assets/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
