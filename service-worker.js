@@ -3,7 +3,7 @@ const CACHE_NAME = "oasis-puro-v3";
 const APP_FILES = [
   "./",
   "./index.html",
-  "./pwa/manifest.json",
+  "./manifest.json",
   "./assets/logo-oasis-puro.png"
 ];
 
