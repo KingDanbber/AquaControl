@@ -1,10 +1,10 @@
-const CACHE_NAME = "oasis-puro-v3";
+const CACHE_NAME = "oasis-puro-v4";
 
 const APP_FILES = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./assets/logo-oasis-puro.png"
+  "/",
+  "/index.html",
+  "/manifest.json",
+  "/assets/logo-oasis-puro.png"
 ];
 
 self.addEventListener("install", (event) => {
