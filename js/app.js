@@ -1366,6 +1366,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             activeBusiness?.businesses?.id);
     }
 
+    let productsCache = [];
+
     // Función Cargar Productos
 
     async function loadProducts(profile,
@@ -1419,6 +1421,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             `;
             return;
         }
+
+        productsCache = data || [];
 
         container.innerHTML = data.map(product => {
             const isLowStock = Number(product.stock) <= Number(product.min_stock);
@@ -1528,6 +1532,25 @@ document.addEventListener("DOMContentLoaded", async () => {
             <span>Foto</span>
             </button>
 
+            <button
+            type="button"
+            class="btn-edit-product flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl py-2.5 text-xs font-black shadow-lg shadow-sky-500/20 active:scale-95 transition"
+            data-product-id="${product.id}"
+            >
+            <img src="./assets/icons/ajuste.svg" class="w-5 h-5 brightness-0 invert" alt="">
+            <span>Editar</span>
+            </button>
+
+            <button
+            type="button"
+            class="btn-delete-product flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white rounded-2xl py-2.5 text-xs font-black shadow-lg shadow-red-500/20 active:scale-95 transition dark:bg-red-700 dark:hover:bg-red-600"
+            data-product-id="${product.id}"
+            data-product-name="${product.name || "Producto"}"
+            >
+            <img src="./assets/icons/eliminar.svg" class="w-5 h-5 brightness-0 invert" alt="">
+            <span>Eliminar</span>
+            </button>
+
             </div>
             </div>
 
@@ -1605,6 +1628,64 @@ document.addEventListener("DOMContentLoaded", async () => {
                     input.click();
                 });
         });
+
+        document.querySelectorAll(".btn-edit-product").forEach(button => {
+            button.addEventListener("click", (event) => {
+                event.stopPropagation();
+
+                const productId = button.dataset.productId;
+                const product = productsCache.find(item => String(item.id) === String(productId));
+
+                if (!product) {
+                    showToast("No se encontró el producto.", "error");
+                    return;
+                }
+
+                renderProductForm(profile, activeBusiness, product);
+            });
+        });
+
+        document.querySelectorAll(".btn-delete-product").forEach(button => {
+            button.addEventListener("click",
+                (event) => {
+                    event.stopPropagation();
+
+                    openDeleteProductModal( {
+                        productId: button.dataset.productId,
+                        productName: button.dataset.productName,
+                        profile,
+                        activeBusiness
+                    });
+                });
+        });
+    }
+
+    // Función Eliminar Producto
+    function openDeleteProductModal( {
+        productId, productName, profile, activeBusiness
+    }) {
+        openDangerConfirmModal( {
+            title: "Eliminar producto",
+            description: `Se eliminará "${productName}" del catálogo. No afectará pedidos ya registrados.`,
+            keyword: "ELIMINAR",
+            confirmText: "Eliminar",
+            onConfirm: async () => {
+                const {
+                    error
+                } = await supabaseClient
+                .from("products")
+                .update({
+                    is_active: false
+                })
+                .eq("id",
+                    productId);
+
+                if (error) throw error;
+
+                showToast("Producto eliminado correctamente.", "success");
+                await renderProductsView(profile, activeBusiness);
+            }
+        });
     }
 
     // Función Visual Stock
@@ -1668,9 +1749,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         return labels[category] || "Otro";
     }
 
-    // Guardar Productos
+    // Guardar/Editar Productos
 
-    function renderProductForm(profile, activeBusiness) {
+    function renderProductForm(profile, activeBusiness, productToEdit = null) {
         const app = document.querySelector("#app");
         const businessId = activeBusiness?.businesses?.id;
 
@@ -1685,9 +1766,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         ← Volver a productos
         </button>
 
-        <h1 class="text-2xl font-bold">Agregar producto</h1>
+        <h1 class="text-2xl font-bold">
+        ${productToEdit ? "Editar producto": "Agregar producto"}
+        </h1>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        Registra precio de compra, precio de venta y stock.
+        ${productToEdit ? "Actualiza los datos del producto.": "Registra precio de compra, precio de venta y stock."}
         </p>
         </div>
 
@@ -1836,7 +1919,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         type="submit"
         class="w-full bg-sky-600 hover:bg-sky-500 text-white rounded-2xl py-3 font-semibold"
         >
-        Guardar producto
+        ${productToEdit ? "Actualizar producto": "Guardar producto"}
         </button>
 
         </form>
@@ -1848,6 +1931,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         `;
 
         bindBottomNav(profile, activeBusiness);
+
+        if (productToEdit) {
+            const setValue = (selector, value) => {
+                const element = document.querySelector(selector);
+                if (element) element.value = value ?? "";
+            };
+
+            setValue("#product-brand", productToEdit.brand);
+            setValue("#product-name", productToEdit.name);
+            setValue("#product-category", productToEdit.category);
+            setValue("#product-presentation", productToEdit.presentation);
+
+            setValue(
+                "#product-purchase-at",
+                productToEdit.purchase_at
+                ? productToEdit.purchase_at.slice(0, 16): ""
+            );
+
+            setValue("#product-cost", productToEdit.cost_price);
+            setValue("#product-sale", productToEdit.sale_price);
+            setValue("#product-stock", productToEdit.stock);
+            setValue("#product-min-stock", productToEdit.min_stock);
+            setValue("#product-sku", productToEdit.sku);
+        }
 
         document.querySelector("#back-products")?.addEventListener("click", () => {
             renderProductsView(profile, activeBusiness);
@@ -1928,15 +2035,24 @@ document.addEventListener("DOMContentLoaded", async () => {
                     return;
                 }
 
-                const {
-                    error
-                } = await supabaseClient
+                const query = productToEdit
+                ? supabaseClient
+                .from("products")
+                .update(payload)
+                .eq("id", productToEdit.id): supabaseClient
                 .from("products")
                 .insert(payload);
 
+                const {
+                    error
+                } = await query;
+
                 if (error) throw error;
 
-                showToast("Producto agregado correctamente.", "success");
+                showToast(
+                    productToEdit ? "Producto actualizado correctamente.": "Producto guardado correctamente.",
+                    "success"
+                );
                 renderProductsView(profile, activeBusiness);
 
             } catch (error) {
