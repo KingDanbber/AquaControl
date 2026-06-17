@@ -417,6 +417,16 @@ document.addEventListener("DOMContentLoaded", async () => {
    DASHBOARD
 ========================= */
 
+    function dashboardIcon(fileName, className = "dashboard-svg-icon") {
+        return `
+        <img
+        src="./assets/icons/${fileName}"
+        class="${className}"
+        alt=""
+        >
+        `;
+    }
+
     function renderDashboardPlaceholder(profile = null, activeBusiness = null, businesses = []) {
         const app = document.querySelector("#app");
 
@@ -481,7 +491,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
 
         <div id="dashboard-weather" class="dashboard-weather-pill">
-        <span id="weather-icon">🌡️</span>
+        <span id="weather-icon">
+        ${dashboardIcon("gota-de-agua.svg", "weather-svg-icon")}
+        </span>
         <span id="weather-temp">--°C</span>
         <span id="weather-desc">Clima</span>
         </div>
@@ -501,25 +513,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         <section class="dashboard-kpi-grid">
 
         <div class="dashboard-kpi-card kpi-sales">
-        <div class="dashboard-kpi-icon">💵</div>
+        <div class="dashboard-kpi-icon">
+        ${dashboardIcon("bolsa-de-dinero.svg")}
+        </div>
         <p>Ventas hoy</p>
         <h2 id="dashboard-sales-today">$0.00</h2>
         </div>
 
         <div class="dashboard-kpi-card kpi-orders">
-        <div class="dashboard-kpi-icon">📦</div>
+        <div class="dashboard-kpi-icon">
+        ${dashboardIcon("orders.svg")}
+        </div>
         <p>Pedidos</p>
         <h2 id="dashboard-orders-today">0</h2>
         </div>
 
         <div class="dashboard-kpi-card kpi-expenses">
-        <div class="dashboard-kpi-icon">💸</div>
+        <div class="dashboard-kpi-icon">
+        ${dashboardIcon("expenses.svg")}
+        </div>
         <p>Gastos mes</p>
         <h2 id="dashboard-expenses-month">$0.00</h2>
         </div>
 
         <div class="dashboard-kpi-card kpi-profit">
-        <div class="dashboard-kpi-icon">📈</div>
+        <div class="dashboard-kpi-icon">
+        ${dashboardIcon("grafico-de-barras.svg")}
+        </div>
         <p>Ganancia</p>
         <h2 id="dashboard-profit-month">$0.00</h2>
         </div>
@@ -570,7 +590,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <section class="aqua-card smart-tip-card p-5">
 
         <div class="smart-tip-icon" id="smart-tip-icon">
-        💡
+        ${dashboardIcon("gota-de-agua.svg", "smart-tip-svg-icon")}
         </div>
 
         <div class="min-w-0">
@@ -737,7 +757,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         type="button"
         class="goals-edit-btn"
         >
-        ⚙️ Ajustar metas
+        ${dashboardIcon("ajuste.svg", "goal-btn-svg-icon")}
+        <span>Ajustar metas</span>
         </button>
         </div>
 
@@ -949,17 +970,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div id="dashboard-fab-menu" class="dashboard-fab-menu hidden">
 
         <button id="fab-new-order" type="button">
-        <span>📦</span>
+        <span>${dashboardIcon("orders.svg", "fab-svg-icon")}</span>
         Nuevo pedido
         </button>
 
         <button id="fab-new-product" type="button">
-        <span>🧊</span>
+        <span>${dashboardIcon("products.svg", "fab-svg-icon")}</span>
         Nuevo producto
         </button>
 
         <button id="fab-new-expense" type="button">
-        <span>💸</span>
+        <span>${dashboardIcon("expenses.svg", "fab-svg-icon")}</span>
         Nuevo gasto
         </button>
 
@@ -4841,6 +4862,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    async function updateAdminProfile(payload,
+        profile,
+        activeBusiness) {
+        try {
+            const {
+                error
+            } = await supabaseClient
+            .from("profiles")
+            .update(payload)
+            .eq("id",
+                profile.id);
+
+            if (error) throw error;
+
+            showToast("Perfil actualizado correctamente.", "success");
+
+            const updatedProfile = {
+                ...profile,
+                ...payload
+            };
+
+            await renderAdminView(updatedProfile, activeBusiness);
+
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "No se pudo actualizar el perfil.", "error");
+        }
+    }
+
     function openChangePasswordModal() {
         openAdminPasswordModal();
     }
@@ -4936,13 +4986,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         <label>
         <span>Nueva contraseña</span>
+        <div class="password-field-wrap">
         <input id="new-admin-password" type="password" autocomplete="new-password">
+        <button type="button" class="toggle-admin-password" data-target="new-admin-password">👁️</button>
+        </div>
         </label>
 
         <label>
         <span>Confirmar contraseña</span>
+        <div class="password-field-wrap">
         <input id="confirm-admin-password" type="password" autocomplete="new-password">
+        <button type="button" class="toggle-admin-password" data-target="confirm-admin-password">👁️</button>
+        </div>
         </label>
+
+        <div id="password-match-message" class="password-match-message">
+        Escribe nuevamente la contraseña.
+        </div>
 
         <div class="admin-password-hint">
         Mínimo 6 caracteres.
@@ -4957,6 +5017,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         document.body.appendChild(modal);
 
+        const passwordInput = modal.querySelector("#new-admin-password");
+        const confirmInput = modal.querySelector("#confirm-admin-password");
+        const matchMessage = modal.querySelector("#password-match-message");
+
         const closeModal = () => modal.remove();
 
         modal.querySelector(".admin-modal-close")?.addEventListener("click",
@@ -4969,35 +5033,70 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (event.target === modal) closeModal();
             });
 
-        modal.querySelector(".admin-modal-confirm")?.addEventListener("click",
-            async () => {
-                const password = modal.querySelector("#new-admin-password").value;
-                const confirmPassword = modal.querySelector("#confirm-admin-password").value;
-                const button = modal.querySelector(".admin-modal-confirm");
+        modal.querySelectorAll(".toggle-admin-password").forEach(button => {
+            button.addEventListener("click", () => {
+                const input = modal.querySelector(`#${button.dataset.target}`);
+                if (!input) return;
 
-                if (password.length < 6) {
-                    showToast("La contraseña debe tener mínimo 6 caracteres.", "warning");
-                    return;
-                }
-
-                if (password !== confirmPassword) {
-                    showToast("Las contraseñas no coinciden.", "error");
-                    return;
-                }
-
-                try {
-                    button.disabled = true;
-                    button.textContent = "Actualizando...";
-
-                    await updateAdminPassword(password);
-
-                    closeModal();
-
-                } finally {
-                    button.disabled = false;
-                    button.textContent = "Actualizar";
-                }
+                const isPassword = input.type === "password";
+                input.type = isPassword ? "text": "password";
+                button.textContent = isPassword ? "🙈": "👁️";
             });
+        });
+
+        const validatePasswordsLive = () => {
+            const password = passwordInput.value;
+            const confirmPassword = confirmInput.value;
+
+            matchMessage.classList.remove("success", "error", "warning");
+
+            if (!confirmPassword) {
+                matchMessage.textContent = "Escribe nuevamente la contraseña.";
+                matchMessage.classList.add("warning");
+                return;
+            }
+
+            if (password === confirmPassword) {
+                matchMessage.textContent = "Las contraseñas coinciden.";
+                matchMessage.classList.add("success");
+            } else {
+                matchMessage.textContent = "Las contraseñas no coinciden.";
+                matchMessage.classList.add("error");
+            }
+        };
+
+        passwordInput?.addEventListener("input", validatePasswordsLive);
+        confirmInput?.addEventListener("input", validatePasswordsLive);
+
+        setTimeout(() => passwordInput?.focus(), 80);
+
+        modal.querySelector(".admin-modal-confirm")?.addEventListener("click", async () => {
+            const password = passwordInput.value;
+            const confirmPassword = confirmInput.value;
+            const button = modal.querySelector(".admin-modal-confirm");
+
+            if (password.length < 6) {
+                showToast("La contraseña debe tener mínimo 6 caracteres.", "warning");
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showToast("Las contraseñas no coinciden.", "error");
+                return;
+            }
+
+            try {
+                button.disabled = true;
+                button.textContent = "Actualizando...";
+
+                await updateAdminPassword(password);
+                closeModal();
+
+            } finally {
+                button.disabled = false;
+                button.textContent = "Actualizar";
+            }
+        });
     }
 
     async function updateAdminPassword(newPassword) {
@@ -8008,71 +8107,49 @@ document.addEventListener("DOMContentLoaded", async () => {
         lowStock = 0,
         monthProfit = 0
     }) {
-
-        const role =
-        document.querySelector(
-            ".dashboard-role-badge"
-        );
+        const role = document.querySelector(".dashboard-role-badge");
 
         if (role) {
-
             role.style.display =
-            salesToday === 0 ||
-            lowStock > 0
+            salesToday === 0 || lowStock > 0
             ? "none": "inline-flex";
-
         }
 
-        const el =
-        document.querySelector(
-            "#dashboard-status-banner"
-        );
-
+        const el = document.querySelector("#dashboard-status-banner");
         if (!el) return;
 
         if (salesToday === 0) {
-
-            el.className =
-            "dashboard-status-banner warning";
-
-            el.innerHTML =
-            "📦 Primer pedido del día pendiente";
-
+            el.className = "dashboard-status-banner warning";
+            el.innerHTML = `
+            ${dashboardIcon("orders.svg", "status-banner-svg")}
+            <span>Primer pedido del día pendiente</span>
+            `;
             return;
-
         }
 
         if (lowStock > 0) {
-
-            el.className =
-            "dashboard-status-banner danger";
-
-            el.innerHTML =
-            `⚠️ ${lowStock} producto(s) necesitan reabastecimiento`;
-
+            el.className = "dashboard-status-banner danger";
+            el.innerHTML = `
+            ${dashboardIcon("precio-bajo.svg", "status-banner-svg")}
+            <span>${lowStock} producto(s) necesitan reabastecimiento</span>
+            `;
             return;
-
         }
 
         if (monthProfit > 1000) {
-
-            el.className =
-            "dashboard-status-banner success";
-
-            el.innerHTML =
-            "🚀 Excelente ritmo este mes";
-
+            el.className = "dashboard-status-banner success";
+            el.innerHTML = `
+            ${dashboardIcon("grafico-de-barras.svg", "status-banner-svg")}
+            <span>Excelente ritmo este mes</span>
+            `;
             return;
-
         }
 
-        el.className =
-        "dashboard-status-banner good";
-
-        el.innerHTML =
-        "✨ Todo funcionando correctamente";
-
-
+        el.className = "dashboard-status-banner good";
+        el.innerHTML = `
+        ${dashboardIcon("gota-de-agua.svg", "status-banner-svg")}
+        <span>Todo funcionando correctamente</span>
+        `;
     }
 
     // Cargar Datos Dashboard
@@ -8756,34 +8833,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!icon || !title || !message) return;
 
         if (lowStockCount > 0) {
-            icon.textContent = "⚠️";
+            icon.innerHTML = dashboardIcon("advertencia.svg", "smart-tip-svg-icon");
             title.textContent = "Inventario por revisar";
             message.textContent = `Tienes ${lowStockCount} producto(s) con stock bajo. Conviene reabastecer antes de quedarte sin venta.`;
             return;
         }
 
         if (ordersToday <= 0) {
-            icon.textContent = "📦";
+            icon.innerHTML = dashboardIcon("orders.svg", "smart-tip-svg-icon");
             title.textContent = "Aún no hay pedidos hoy";
             message.textContent = "Puedes registrar un nuevo pedido desde acciones rápidas o revisar productos disponibles.";
             return;
         }
 
         if (expensesMonth > monthProfit && monthProfit > 0) {
-            icon.textContent = "💸";
+            icon.innerHTML = dashboardIcon("expenses.svg", "smart-tip-svg-icon");
             title.textContent = "Gastos elevados";
             message.textContent = "Los gastos del mes están altos frente a la ganancia. Revisa compras e insumos.";
             return;
         }
 
         if (monthProfit > 0) {
-            icon.textContent = "✅";
+            icon.innerHTML = dashboardIcon("check.svg", "smart-tip-svg-icon");
             title.textContent = "Buen ritmo";
             message.textContent = "Tu negocio muestra ganancia positiva y el inventario se ve saludable.";
             return;
         }
 
-        icon.textContent = "💡";
+        icon.innerHTML = dashboardIcon("bombilla.svg", "smart-tip-svg-icon");
         title.textContent = "Listo para operar";
         message.textContent = "Cuando registres pedidos, gastos o productos, Oasis Puro actualizará este resumen.";
     }
@@ -9396,9 +9473,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             date: order.created_at,
             html: `
             <div class="timeline-item timeline-order">
-
             <div class="timeline-dot">
-            📦
+            ${dashboardIcon("orders.svg", "timeline-svg-icon")}
             </div>
 
             <div class="timeline-content">
@@ -9415,7 +9491,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             <p>${formatCurrency(order.total_sale || 0)}</p>
             <span>${formatDate(order.created_at)}</span>
             </div>
-
             </div>
             `
         }));
@@ -9425,9 +9500,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             date: expense.created_at,
             html: `
             <div class="timeline-item timeline-expense">
-
             <div class="timeline-dot">
-            💸
+            ${dashboardIcon("expenses.svg", "timeline-svg-icon")}
             </div>
 
             <div class="timeline-content">
@@ -9444,7 +9518,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             <p>${formatCurrency(expense.total_amount || 0)}</p>
             <span>${formatDate(expense.created_at)}</span>
             </div>
-
             </div>
             `
         }));
@@ -9459,7 +9532,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (merged.length === 0) {
             container.innerHTML = `
             <div class="timeline-empty">
-            <div>🧾</div>
+            <div>
+            ${dashboardIcon("papel-vacio.svg", "timeline-empty-svg")}
+            </div>
             <p>Sin movimientos recientes.</p>
             <span>Cuando registres pedidos o gastos, aparecerán aquí.</span>
             </div>
