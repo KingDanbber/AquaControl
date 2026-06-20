@@ -2003,7 +2003,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 purchase_at: document.querySelector("#product-purchase-at").value
                 ? new Date(document.querySelector("#product-purchase-at").value).toISOString(): new Date().toISOString(),
                 is_active: true,
-                image_url: imageUrl
+                image_url: productToEdit?.image_url || null
             };
 
             if (!payload.business_id) {
@@ -2026,34 +2026,36 @@ document.addEventListener("DOMContentLoaded", async () => {
                     setButtonLoading(button, true, "Guardando...");
                 }
 
-                const {
-                    data: existingProducts,
-                    error: duplicateError
-                } = await supabaseClient
-                .from("products")
-                .select("*")
-                .eq("business_id", payload.business_id)
-                .eq("is_active", true)
-                .ilike("brand", payload.brand)
-                .ilike("name", payload.name)
-                .ilike("presentation", payload.presentation);
+                if (!productToEdit) {
+                    const {
+                        data: existingProducts,
+                        error: duplicateError
+                    } = await supabaseClient
+                    .from("products")
+                    .select("*")
+                    .eq("business_id", payload.business_id)
+                    .eq("is_active", true)
+                    .ilike("brand", payload.brand)
+                    .ilike("name", payload.name)
+                    .ilike("presentation", payload.presentation);
 
-                if (duplicateError) throw duplicateError;
+                    if (duplicateError) throw duplicateError;
 
-                if (existingProducts && existingProducts.length > 0) {
-                    const existingProduct = existingProducts[0];
+                    if (existingProducts && existingProducts.length > 0) {
+                        const existingProduct = existingProducts[0];
 
-                    const confirmRestock = confirm(
-                        `Ya existe este producto:\n\n${existingProduct.brand || ""} ${existingProduct.name} ${existingProduct.presentation || ""}\n\n¿Deseas reabastecer el producto existente?`
-                    );
+                        const confirmRestock = confirm(
+                            `Ya existe este producto:\n\n${existingProduct.brand || ""} ${existingProduct.name} ${existingProduct.presentation || ""}\n\n¿Deseas reabastecer el producto existente?`
+                        );
 
-                    if (confirmRestock) {
-                        renderRestockProductForm(profile, activeBusiness, existingProduct);
+                        if (confirmRestock) {
+                            renderRestockProductForm(profile, activeBusiness, existingProduct);
+                            return;
+                        }
+
+                        showToast("Producto duplicado no agregado.", "warning");
                         return;
                     }
-
-                    showToast("Producto duplicado no agregado.", "warning");
-                    return;
                 }
 
                 const query = productToEdit
